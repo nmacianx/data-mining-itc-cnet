@@ -7,6 +7,7 @@ import os
 BASE_URL = "https://www.cnet.com/news/"
 DOMAIN_URL = "https://www.cnet.com"
 NEWS_UNKNOWN_STRUCTURE = "Can't scrape unknown website structure."
+DESTINATION_FILE_NAME = 'scraping.txt'
 
 
 def scrape_main_page():
@@ -149,7 +150,7 @@ def save_results(results):
 
     """
     file_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), 'scraping.txt')
+        os.path.dirname(os.path.realpath(__file__)), DESTINATION_FILE_NAME)
     with open(file_path, 'a') as f:
         f.write('Scraping session: {}\n'.format(
             datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
