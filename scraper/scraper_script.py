@@ -1,9 +1,7 @@
 import os
-
 from bs4 import BeautifulSoup
 import requests
-import re
-from textparser import Tag
+
 
 SITE_URL = 'https://www.cnet.com/news/'
 
@@ -49,19 +47,20 @@ class Scraper:
     Through this class it is possible to configure and scrape a specific website
     """
 
-    def __init__(self, site_url, configurations, file_to_save_path='/'):
+    def __init__(self, site_url, configurations, path_to_save_file='/'):
         """
         Build the Scraper class, given the url values of the site and the settings to scrape it
 
         :param site_url: url of the site to download
         :param configurations: settings to scrape the site
+        :param path_to_save_file: path where the scraped content will be save
         """
 
-        if not os.path.isdir(file_to_save_path):
-            print(f'Directory \'{file_to_save_path}\' does not exist')
+        if not os.path.isdir(path_to_save_file):
+            print(f'Directory \'{path_to_save_file}\' does not exist')
             self._file_to_save_path = ''
         else:
-            self._file_to_save_path = file_to_save_path
+            self._file_to_save_path = path_to_save_file + 'my_scrapper.csv'
 
         self._site_url = site_url
         self._domain_url = self.__get_domain_from_url()
@@ -109,7 +108,7 @@ class Scraper:
                                                                      class_=configuration['class']), configuration))
                 else:
                     scrapped.append(self.__scrape_all_items(soup.find_all(configuration['parent_element'],
-                                                                      class_=configuration['class']), configuration))
+                                                                     class_=configuration['class']), configuration))
         except AttributeError as ae:
             print(str(ae).replace('$paren_pattern', configuration['parent_element']))
         except Exception as ex:
@@ -122,7 +121,7 @@ class Scraper:
         It is used when all_elements = False is specified in the configuration.
         Scrape a single element from the parent_element
 
-        :param html: parsed html site
+        :param parent_element: parsed html site
         :param configuration: configuration to use for scrap
         :return: all the elements specified in the configuration patterns
         """
@@ -195,12 +194,28 @@ class Scraper:
 
             i += 1
 
-    def __write_csv_file(self, elements, path='/', mode='x'):
-        pass
+    def __write_csv_file(self, elements, mode='at'):
+        if len(elements) == 0:
+            return
+
+        with open(self._file_to_save_path, mode) as file_to_save:
+            for element in elements:
+                if type(element[0]) is list:
+                    for item in element:
+                        file_to_save.write(';'.join(item) + '\n')
+                        print('; '.join(item).strip())
+                else:
+                    file_to_save.write(';'.join(element) + '\n')
+                    print('; '.join(element).strip())
 
 
-asd = Scraper(SITE_URL, [Configuration('diva', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap'),
-                         Configuration('div', ['div.a[href]', 'div.h6.a.text', 'div.span.text'], 'col-2 assetWrap', all_elements=True)])
+scraper = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap'),
+                             Configuration('div', ['div.a[href]', 'div.h6.a.text', 'div.span.text'], 'col-2 assetWrap', all_elements=True)],
+                  'C:/Users/Alejandro/Downloads/')
+scraper.scrape()
 
-
-asd.scrape()
+# # For testing only
+# asd = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap'),
+#                          Configuration('div', ['div.a[href]', 'div.h6.a.text', 'div.span.text'], 'col-2 assetWrap', all_elements=True)],
+#               'C:/Users/Alejandro/Downloads/')
+# asd.scrape()
