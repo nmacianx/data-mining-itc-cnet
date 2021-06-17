@@ -6,6 +6,7 @@ import os
 
 BASE_URL = "https://www.cnet.com/news/"
 DOMAIN_URL = "https://www.cnet.com"
+NEWS_UNKNOWN_STRUCTURE = "Can't scrape unknown website structure."
 
 
 def scrape_main_page():
@@ -31,11 +32,19 @@ def scrape_main_page():
     return scrape_urls
 
 
-def scrape_story(url):
-    news_content = {}
-    page = requests.get(url)
-    soup = BeautifulSoup(page.content, 'html.parser')
+def scrape_regular_story(soup):
+    """
+    Scrapes a regular story site (most news follow this site structure, for
+    example: https://www.cnet.com/news/amazon-sued-repeatedly-for-lost-wages-avoids-paying-workers-for-long-waits-and-walks/
+    some can be different like the ones using Nuxt.js) looking for the title,
+    description, authors and published date.
+    Args:
+        soup (): BeautifulSoup object with the story site parsed
 
+    Returns:
+        news_content: dictionary with the scraped data found in the site
+    """
+    news_content = {}
     header = soup.select('.content-header .c-head h1.speakableText')
     if len(header) > 0:
         news_content['title'] = header[0].getText()
@@ -52,9 +61,71 @@ def scrape_story(url):
     if len(date) > 0:
         news_content['date'] = date[0].getText()
 
-    news_content['url'] = url
+    return news_content
+
+
+def scrape_nuxt_story(soup):
+    """
+    Scrapes a special Nuxt.js story site (full width image header,check example
+    https://www.cnet.com/features/gps-rules-everything-a-satellite-launch-this-week-keeps-its-upgrade-rolling/
+    ) looking for the title, description, authors and published date.
+    Args:
+        soup (): BeautifulSoup object with the story site parsed
+
+    Returns:
+        news_content: dictionary with the scraped data found in the site
+    """
+    news_content = {}
+    title = soup.select('.c-globalHero_content h1.c-globalHero_heading')
+    if len(title) > 0:
+        news_content['title'] = title[0].getText()
+
+    description_selector = '.c-globalHero_content p.c-globalHero_description'
+    description = soup.select(description_selector)
+    if len(description) > 0:
+        news_content['description'] = description[0].getText()
+
+    aut_sel = '.c-globalHero_content .c-globalAuthor_meta a.c-globalAuthor_link'
+    authors = soup.select(aut_sel)
+    if len(authors) > 0:
+        news_content['authors'] = [a.getText() for a in authors]
+
+    date = soup.select('.c-globalHero_content .c-globalAuthor_meta time')
+    if len(date) > 0:
+        news_content['date'] = date[0].getText()
 
     return news_content
+
+
+def scrape_story(url):
+    """
+    Given an URL for a story, it first check if it follows the regular structure
+    and calls the regular scraper. If it doesn't, it checks for the special full
+    width image structure and calls it. Otherwise it returns an error message.
+    If the scraper succeeds, it returns the scraped data.
+    Args:
+        url (): URL for the story to be scraped
+
+    Returns:
+        news_content: dict with scraped data if succeeds or error if not known
+            site structure
+    """
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    regular_header = soup.select('.content-header')
+
+    if len(regular_header) > 0:
+        news_content = scrape_regular_story(soup)
+        news_content['url'] = url
+        return news_content
+    else:
+        nuxt_header = soup.select('.c-globalHero_content')
+        if len(nuxt_header) > 0:
+            news_content = scrape_nuxt_story(soup)
+            news_content['url'] = url
+            return news_content
+        else:
+            return {'url': url, 'error': NEWS_UNKNOWN_STRUCTURE}
 
 
 def scrape_stories(scrape_urls):
@@ -74,7 +145,7 @@ def save_results(results):
     Args:
         results (): list of objects where each object contains data associated
         to each story. The attributes for a story are: title, description,
-        authors, date and URL.
+        authors, date, URL, and optionally 'error'.
 
     """
     file_path = os.path.join(
@@ -86,16 +157,18 @@ def save_results(results):
         for ix, news in enumerate(results):
             f.write('\n\nStory {}:\n'.format(ix + 1))
             if 'title' in news:
-                f.write('Title: {}\n'.format(news['title']))
+                f.write('Title: {}\n'.format(news['title'].strip()))
             if 'description' in news:
-                f.write('Description: {}\n'.format(news['description']))
+                f.write('Description: {}\n'.format(news['description'].strip()))
             if 'authors' in news:
                 authors = ', '.join(news['authors'])
-                f.write('Author/s: {}\n'.format(authors))
+                f.write('Author/s: {}\n'.format(authors.strip()))
             if 'date' in news:
-                f.write('Published date: {}\n'.format(news['date']))
+                f.write('Published date: {}\n'.format(news['date'].strip()))
             if 'url' in news:
                 f.write('URL: {}\n'.format(news['url']))
+            if 'error' in news:
+                f.write('Error: {}\n'.format(news['error']))
         f.write('====================\n\n')
 
 
@@ -104,6 +177,7 @@ def main():
     print('{} stories will be scraped'.format(len(urls)))
     scrape_results = scrape_stories(urls)
     save_results(scrape_results)
+    print('{} stories were scraped!'.format(len(urls)))
 
 
 if __name__ == '__main__':
