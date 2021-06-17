@@ -95,42 +95,18 @@ class Scraper:
         soup = BeautifulSoup(self.html_text, 'lxml')
         scrapped = []
 
-        asd = soup.find('div', class_='col-4 assetWrap')
-        print(self._site_url + asd.div.a['href'])
-        print(asd, end='\n\n')
-        print(asd.div.div.h5.a.text)
-        print(asd.div.div.div.text)
-        print(asd.find('div').find('a').attrs['href'])
-
-        for configuration in self.configurations:
-            if not configuration['all']:
-                scrapped.append(self.__scrape_one_item(soup, configuration))
-            else:
-                pass
-
-        asd = soup.find('div', class_='col-4 assetWrap')
         asd2 = soup.find_all('div', class_='col-2 assetWrap')
-
-        dictionary = {
-            'parent_element': 'div',
-            'class': 'col-2 assetWrap',
-            'all': False,
-            'patterns': [
-                'div.a[href]',
-                'div.div.h5.a.text',
-                'div.div.div.text'
-            ]
-        }
-
-        print(self._site_url + asd.div.a['href'])
-        print(asd.div.div.h5.a.text)
-        print(asd.div.div.div.text)
-        print(asd.find('div').find('a').attrs['href'])
 
         for a in asd2:
             print(self._site_url + a.div.a['href'])
             print(a.div.h6.a.text)
             print(a.div.span.text)
+
+        for configuration in self.configurations:
+            if not configuration['all']:
+                scrapped.append(self.__scrape_one_item(soup, configuration))
+            else:
+                scrapped.append(self.__scrape_all_items(soup, configuration))
 
     def __scrape_one_item(self, html, configuration: Configuration):
         """
@@ -143,8 +119,7 @@ class Scraper:
 
         element = html.find(configuration['parent_element'], class_=configuration['class'])
         patterns_text = []
-        element_child = ''
-
+        
         for pattern in configuration['patterns']:
             print(element)
             element_child = element
@@ -152,17 +127,23 @@ class Scraper:
                 if tag == 'text':
                     patterns_text.append(element.text.strip())
                 elif '[' in tag:
-                    sintax = tag.split('[')
-                    element_child = element_child.find(sintax[0])
-                    patterns_text.append(element_child.attrs[sintax[1][:len(sintax[1]) - 1]].strip())
+                    syntax = tag.split('[')
+                    element_child = element_child.find(syntax[0])
+                    patterns_text.append(element_child.attrs[syntax[1][:len(syntax[1]) - 1]].strip())
                 else:
                     element_child = element_child.find(tag)
             print()
 
         return patterns_text
 
+    def __scrape_all_items(self, html, configuration: Configuration):
+        elements = html.find_all(configuration['parent_element'], class_=configuration['class'])
 
-asd = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap')])
+        # for element in elements:
+
+
+
+    asd = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap')])
 
 
 asd.scrape()
