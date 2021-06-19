@@ -1,4 +1,7 @@
+import datetime
 import os
+from lib2to3.patcomp import pattern_convert
+
 from bs4 import BeautifulSoup
 import requests
 
@@ -11,7 +14,7 @@ class Configuration:
     It is in charge of handling everything related to the Configuration of the scraper
     """
 
-    def __init__(self, parent_element, patterns, class_=None, all_elements=False):
+    def __init__(self, parent_element, patterns, *, class_=None, all_elements=False):
         """
         Build the Configuration class through the input parameters parent_element, class_, all_elements, patterns
 
@@ -31,15 +34,31 @@ class Configuration:
             ]
         """
 
+        self.mapping_original_order = []
         self._configuration = {
             'parent_element': parent_element,
             'class': class_,
             'all': all_elements,
-            'patterns': patterns
+            'patterns': self.__sort_patterns(patterns)
         }
 
     def __getitem__(self, item):
         return self._configuration[item]
+
+    def __sort_patterns(self, patterns: list):
+        """
+        Sort the patterns by the amount of elements it has
+
+        :param patterns: patterns to sort
+        :return: sorted patterns
+        """
+
+        elements = [pattern.split('.') for pattern in patterns]
+        elements.sort(key=lambda x: len(x), reverse=True)
+
+        self.mapping_original_order = [elements.index(i.split('.')) for i in patterns]
+
+        return elements
 
 
 class Scraper:
@@ -103,81 +122,106 @@ class Scraper:
 
         try:
             for configuration in self.configurations:
-                if not configuration['all']:
-                    scrapped.append(self.__scrape_one_item(soup.find(configuration['parent_element'],
-                                                                     class_=configuration['class']), configuration))
-                else:
-                    scrapped.append(self.__scrape_all_items(soup.find_all(configuration['parent_element'],
-                                                                     class_=configuration['class']), configuration))
+                parent_elements = soup.find_all(configuration['parent_element'], class_=configuration['class'])
+                parent_elements = self.__filter_parents(parent_elements, configuration)
+                scrapped_for_parent_elements = []
+                scraped_element = []
+
+                i = 0
+                for pattern in configuration['patterns']:
+                    j = 0
+                    for parent_element in parent_elements:
+                        self.__iterate_in_depth(parent_element, pattern, extracted_pattern=scraped_element)
+
+                        if i == 0:
+                            scrapped_for_parent_elements.append(scraped_element)
+                        else:
+                            scrapped_for_parent_elements[j].append(scraped_element[0])
+
+                        scraped_element = []
+                        j += 1
+
+                    i += 1
+
+                scrapped.append(scrapped_for_parent_elements)
         except AttributeError as ae:
             print(str(ae).replace('$paren_pattern', configuration['parent_element']))
+            scrapped = []
+        except TypeError as te:
+            print(te)
+            scrapped = []
         except Exception as ex:
             print(ex)
+            scrapped = []
 
-        self.__write_csv_file(scrapped)
+        self.__write_csv_file(scrapped, [self.configurations[i].mapping_original_order for i, _ in enumerate(self.configurations)])
 
-    def __scrape_one_item(self, parent_element, configuration: Configuration):
+    def __filter_parents(self, parent_elements, configuration):
         """
-        It is used when all_elements = False is specified in the configuration.
-        Scrape a single element from the parent_element
+        Filter all found html elements to match all configuration patterns
 
-        :param parent_element: parsed html site
-        :param configuration: configuration to use for scrap
-        :return: all the elements specified in the configuration patterns
+        :param parent_elements: html elements found
+        :param configuration: patterns that must match
+        :return: filtered html elements
         """
 
-        patterns_text = []
+        matched_elements = []
+        filtered_parent_elements = parent_elements
 
-        if not parent_element:
-            raise AttributeError('An error occurred while executing the \'$paren_pattern\' parent pattern.')
+        for pattern in configuration['patterns']:
+            for parent_element in filtered_parent_elements:
+                if self.__iterate_in_depth(parent_element, pattern):
+                    matched_elements.append(parent_element)
 
-        try:
-            for pattern in configuration['patterns']:
-                element_child = parent_element
+            filtered_parent_elements = matched_elements
+            matched_elements = []
 
-                for tag in pattern.split('.'):
-                    if tag == 'text':
-                        patterns_text.append(element_child.text.strip())
-                    elif '[' in tag:
-                        syntax = tag.split('[')
-                        element_child = element_child.find(syntax[0])
+        return filtered_parent_elements
 
-                        if syntax[1][:len(syntax[1]) - 1] == 'href' or syntax[1][:len(syntax[1]) - 1] == 'src':
-                            patterns_text.append(self._domain_url + element_child.attrs[syntax[1][:len(syntax[1]) - 1]].strip())
-                        else:
-                            patterns_text.append(element_child.attrs[syntax[1][:len(syntax[1]) - 1]].strip())
+    def __iterate_in_depth(self, root, elements: list, iter_i=0, *, extracted_pattern=None):
+        """
+        Search deep for pattern compliance and keep it when found if extracted_pattern is not None
+
+        :param extracted_pattern: list item to keep pattern when its found
+        :param root: html a element to start the deep search with
+        :param elements: pattern to look for
+        :param iter_i: iteration counter
+        :return: True if the element is found, False otherwise
+        """
+
+        if len(elements) - 1 == iter_i:
+            tag = elements[iter_i]
+
+            if tag == 'text':
+                if extracted_pattern is not None:
+                    extracted_pattern.append(root.text.strip())
+                return True
+            else:
+                syntax = tag.split('[')
+                element_child = root.find(syntax[0])
+
+                if not element_child:
+                    return False
+
+                if extracted_pattern is not None:
+                    if syntax[1][:len(syntax[1]) - 1] == 'href' or syntax[1][:len(syntax[1]) - 1] == 'src':
+                        extracted_pattern.append(
+                            self._domain_url + element_child.attrs[syntax[1][:len(syntax[1]) - 1]].strip())
                     else:
-                        element_child = element_child.find(tag)
-        except AttributeError:
-            print(f'An error occurred while executing the pattern {pattern}. '
-                  f'Possibly there are no labels in that order recursively')
-        except TypeError:
-            print('An error occurred while iterating the configurations. '
-                  'Possibly there are none or they are poorly structured')
-        except Exception:
-            print('An error occurred')
+                        extracted_pattern.append(element_child.attrs[syntax[1][:len(syntax[1]) - 1]].strip())
 
-        return patterns_text
+                return True
+        else:
+            tag = elements[iter_i]
+            element_parent = root.find_all(tag)
 
-    def __scrape_all_items(self, parent_elements, configuration: Configuration):
-        """
-        It is used when all_elements = True is specified in the configuration.
-        Scrape all elements from parent_elements
+            found = False
+            i = 0
+            while i < len(element_parent) and not found:
+                found = self.__iterate_in_depth(element_parent[i], elements, iter_i + 1, extracted_pattern=extracted_pattern)
+                i += 1
 
-        :param parent_elements: parsed html site of all matches
-        :param configuration: configuration to use for scrap
-        :return: all the elements specified in the configuration patterns of all matches of parent_elements
-        """
-
-        if not parent_elements:
-            raise AttributeError('An error occurred while executing the \'$paren_pattern\' parent pattern.')
-
-        patterns_text = []
-
-        for parent_element in parent_elements:
-            patterns_text.append(self.__scrape_one_item(parent_element, configuration))
-
-        return patterns_text
+            return found
 
     def __get_domain_from_url(self):
         """
@@ -194,28 +238,29 @@ class Scraper:
 
             i += 1
 
-    def __write_csv_file(self, elements, mode='at'):
+    def __write_csv_file(self, elements, writing_order, mode='at'):
+        """
+        Save scraped items to csv file
+
+        :param elements: elements to save
+        :param writing_order: order in which scraped items should be written
+        :param mode: writing mode. By default it will add the elements to the file in question
+        """
+
         if len(elements) == 0:
             return
 
         with open(self._file_to_save_path, mode) as file_to_save:
-            for element in elements:
-                if type(element[0]) is list:
-                    for item in element:
-                        file_to_save.write(';'.join(item) + '\n')
-                        print('; '.join(item).strip())
-                else:
-                    file_to_save.write(';'.join(element) + '\n')
-                    print('; '.join(element).strip())
+            for i, element in enumerate(elements):
+                for item in element:
+                    text = '; '.join([item[j] for j in writing_order[i]]).strip()
+                    file_to_save.write(datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S") + '; ' + text + '\n')
+                    print(datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S") + '; ' + text)
 
 
-scraper = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap'),
-                             Configuration('div', ['div.a[href]', 'div.h6.a.text', 'div.span.text'], 'col-2 assetWrap', all_elements=True)],
+scraper = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.h3.a.text', 'div.p.a.text'], class_='riverPost', all_elements=True),
+                             Configuration('div', ['div.a[href]', 'div.div.h6.a.text'], class_='col-2 assetWrap', all_elements=True),
+                             Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], class_='col-4 assetWrap'),
+                             Configuration('div', ['a[href]', 'div.h6.a.text'], class_='assetBody dekRight riverPost', all_elements=True)],
                   'C:/Users/Alejandro/Downloads/')
 scraper.scrape()
-
-# # For testing only
-# asd = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], 'col-4 assetWrap'),
-#                          Configuration('div', ['div.a[href]', 'div.h6.a.text', 'div.span.text'], 'col-2 assetWrap', all_elements=True)],
-#               'C:/Users/Alejandro/Downloads/')
-# asd.scrape()
