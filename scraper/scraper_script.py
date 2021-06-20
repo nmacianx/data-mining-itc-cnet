@@ -1,9 +1,7 @@
 import datetime
 import os
-from lib2to3.patcomp import pattern_convert
-
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 
 
 SITE_URL = 'https://www.cnet.com/news/'
@@ -14,7 +12,7 @@ class Configuration:
     It is in charge of handling everything related to the Configuration of the scraper
     """
 
-    def __init__(self, parent_element, patterns, *, class_=None, all_elements=False):
+    def __init__(self, parent_element, patterns, *, class_=None):
         """
         Build the Configuration class through the input parameters parent_element, class_, all_elements, patterns
 
@@ -38,7 +36,7 @@ class Configuration:
         self._configuration = {
             'parent_element': parent_element,
             'class': class_,
-            'all': all_elements,
+            # 'all': all_elements,
             'patterns': self.__sort_patterns(patterns)
         }
 
@@ -55,7 +53,6 @@ class Configuration:
 
         elements = [pattern.split('.') for pattern in patterns]
         elements.sort(key=lambda x: len(x), reverse=True)
-
         self.mapping_original_order = [elements.index(i.split('.')) for i in patterns]
 
         return elements
@@ -151,6 +148,7 @@ class Scraper:
             print(te)
             scrapped = []
         except Exception as ex:
+            print('Error')
             print(ex)
             scrapped = []
 
@@ -258,9 +256,9 @@ class Scraper:
                     print(datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S") + '; ' + text)
 
 
-scraper = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.h3.a.text', 'div.p.a.text'], class_='riverPost', all_elements=True),
-                             Configuration('div', ['div.a[href]', 'div.div.h6.a.text'], class_='col-2 assetWrap', all_elements=True),
+scraper = Scraper(SITE_URL, [Configuration('div', ['div.a[href]', 'div.h3.a.text', 'div.p.a.text'], class_='riverPost'),
+                             Configuration('div', ['div.a[href]', 'div.div.h6.a.text'], class_='col-2 assetWrap'),
                              Configuration('div', ['div.a[href]', 'div.div.h5.a.text', 'div.div.div.text'], class_='col-4 assetWrap'),
-                             Configuration('div', ['a[href]', 'div.h6.a.text'], class_='assetBody dekRight riverPost', all_elements=True)],
+                             Configuration('div', ['a[href]', 'div.h6.a.text'], class_='assetBody dekRight riverPost')],
                   'C:/Users/Alejandro/Downloads/')
 scraper.scrape()
