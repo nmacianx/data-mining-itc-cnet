@@ -2,67 +2,31 @@ from bs4 import BeautifulSoup
 import requests
 import datetime
 import os
-
+from configuration import Configuration
 
 BASE_URL = "https://www.cnet.com/news/"
 DOMAIN_URL = "https://www.cnet.com"
 NEWS_UNKNOWN_STRUCTURE = "Can't scrape unknown website structure."
 DESTINATION_FILE_NAME = 'scraping.txt'
+CONFIGURATION = Configuration(['#topStories > div > a[href]', '.moreTopStories .assetBody > a[href]'], [
+    {
+        'header': '.content-header',
+        'title': '.content-header .c-head h1.speakableText',
+        'description': '.content-header .c-head p.c-head_dek',
+        'authors': '.content-header .c-assetAuthor_authors a.author',
+        'date': '.content-header .c-assetAuthor_date time'
+    },
+    {
+        'header': '.c-globalHero_content',
+        'title': '.c-globalHero_content h1.c-globalHero_heading',
+        'description': '.c-globalHero_content p.c-globalHero_description',
+        'authors': '.c-globalHero_content .c-globalAuthor_meta a.c-globalAuthor_link',
+        'date': '.c-globalHero_content .c-globalAuthor_meta time'
+    }
+])
 
 
-class Configuration:
-    """
-    It is in charge of handling everything related to the Configuration of the scraper
-    """
-
-    def __init__(self, main_patterns_extract_urls: list[str], templates: list[dict]):
-        """
-        Build the Configuration class through the input parameter patterns
-
-        :param templates: list of all templates, in a dictionary structure, to use for scrape the urls extracted
-        :param main_patterns_extract_urls: patterns that will be used to extract the elements.
-        Each must have the form of CSS selector
-        .|#element > tag1 > taN > tag_with_attr_to_extract[href | src | attribute of tag])
-
-        Example of the use of a valid patterns value:
-            [
-                '#id_element > div a[href]',
-                '.class_parent .class_son1 .class_sonN > h2[title]'
-                'div > div > img[src]'
-            ]
-
-        Example of the use of a valid templates value:
-            [
-                {
-                    'header': '.content-header',
-                    'title': '.content-header .c-head h1.speakableText',
-                    'description': '.content-header .c-head p.c-head_dek',
-                    'authors': '.content-header .c-assetAuthor_authors a.author',
-                    'date': '.content-header .c-assetAuthor_date time'
-                },
-                {
-                    'header': '.c-globalHero_content',
-                    'title': '.c-globalHero_content h1.c-globalHero_heading',
-                    'description': '.c-globalHero_content p.c-globalHero_description',
-                    'authors': '.c-globalHero_content .c-globalAuthor_meta a.c-globalAuthor_link',
-                    'date': '.c-globalHero_content .c-globalAuthor_meta time'
-                },
-            ]
-        """
-
-        self.main_patterns_extract_urls = main_patterns_extract_urls
-        self.__fix_main_patterns_extract_urls()
-        self.templates = templates
-
-    def __fix_main_patterns_extract_urls(self):
-        """
-        Formats user-input patterns for internal use
-        """
-
-        self.main_patterns_extract_urls = [[pattern.split('[')[0], pattern.split('[')[1][:-1]] for pattern in self.main_patterns_extract_urls]
-
-
-def scrape_main_page(configuration: Configuration):
+def scrape_main_page():
     """
     Scrapes the main site to look for the top 13 stories in the site. Given that
     the link point to a relative address, we build the full address for each
@@ -75,14 +39,14 @@ def scrape_main_page(configuration: Configuration):
     page = requests.get(BASE_URL)
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    for pattern_to_search in configuration.main_patterns_extract_urls:
+    for pattern_to_search in CONFIGURATION.main_patterns_extract_urls:
         top_stories = soup.select(pattern_to_search[0])
         scrape_urls += [DOMAIN_URL + a.get(pattern_to_search[1]) for a in top_stories]
 
     return scrape_urls
 
 
-def scrape_regular_story(soup, template: dict):
+def scrape_regular_story(soup, template):
     """
     Scrapes a regular story site (most news follow this site structure, for
     example: https://www.cnet.com/news/amazon-sued-repeatedly-for-lost-wages-avoids-paying-workers-for-long-waits-and-walks/
@@ -115,7 +79,7 @@ def scrape_regular_story(soup, template: dict):
     return news_content
 
 
-def scrape_story(url, configuration: Configuration):
+def scrape_story(url):
     """
     Given an URL for a story, it first check if it follows the regular structure
     and calls the regular scraper. If it doesn't, it checks for the special full
@@ -123,18 +87,14 @@ def scrape_story(url, configuration: Configuration):
     If the scraper succeeds, it returns the scraped data.
     Args:
         url (): URL for the story to be scraped
-        configuration: configuration for scraping process
 
     Returns:
-        news_content: dict with scraped data if succeeds or error if not known
-            site structure
+        news_content: dict with scraped data if succeeds or error if not known site structure
     """
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    temp = 0
-    while temp < len(configuration.templates):
-        template = configuration.templates[temp]
+    for template in CONFIGURATION.templates:
         header = soup.select(template['header'])
 
         if len(header) > 0:
@@ -143,16 +103,13 @@ def scrape_story(url, configuration: Configuration):
 
             return news_content
 
-        temp += 1
-
     return {'url': url, 'error': NEWS_UNKNOWN_STRUCTURE}
 
 
-def scrape_stories(scrape_urls, configuration: Configuration):
+def scrape_stories(scrape_urls):
     """
     Scrape the pages for their urls
 
-    :param configuration: configuration for the scraping process
     :param scrape_urls: urls of pages to scrape
     :return: scraped pages
     """
@@ -161,7 +118,7 @@ def scrape_stories(scrape_urls, configuration: Configuration):
 
     for ix, news in enumerate(scrape_urls):
         print(f'Scraping story no. {ix + 1}...')
-        content = scrape_story(news, configuration)
+        content = scrape_story(news)
         results.append(content)
 
     return results
@@ -203,25 +160,9 @@ def save_results(results):
 
 
 def main():
-    configuration = Configuration(['#topStories > div > a[href]', '.moreTopStories .assetBody > a[href]'], [
-                                              {
-                                                  'header': '.content-header',
-                                                  'title': '.content-header .c-head h1.speakableText',
-                                                  'description': '.content-header .c-head p.c-head_dek',
-                                                  'authors': '.content-header .c-assetAuthor_authors a.author',
-                                                  'date': '.content-header .c-assetAuthor_date time'
-                                              },
-                                              {
-                                                  'header': '.c-globalHero_content',
-                                                  'title': '.c-globalHero_content h1.c-globalHero_heading',
-                                                  'description': '.c-globalHero_content p.c-globalHero_description',
-                                                  'authors': '.c-globalHero_content .c-globalAuthor_meta a.c-globalAuthor_link',
-                                                  'date': '.c-globalHero_content .c-globalAuthor_meta time'
-                                              },
-                                         ])
-    urls = scrape_main_page(configuration)
+    urls = scrape_main_page()
     print('{} stories will be scraped'.format(len(urls)))
-    scrape_results = scrape_stories(urls, configuration)
+    scrape_results = scrape_stories(urls)
     save_results(scrape_results)
     print('{} stories were scraped!'.format(len(urls)))
 
