@@ -8,7 +8,13 @@ BASE_URL = "https://www.cnet.com/news/"
 DOMAIN_URL = "https://www.cnet.com"
 NEWS_UNKNOWN_STRUCTURE = "Can't scrape unknown website structure."
 DESTINATION_FILE_NAME = 'scraping.txt'
-CONFIGURATION = Configuration(['#topStories > div > a[href]', '.moreTopStories .assetBody > a[href]'], [
+
+CONFIG_MAIN_PATTERN = [
+    '#topStories > div > a[href]',
+    '.moreTopStories .assetBody > a[href]'
+]
+
+CONFIG_TEMPLATES = [
     {
         'header': '.content-header',
         'title': '.content-header .c-head h1.speakableText',
@@ -20,17 +26,22 @@ CONFIGURATION = Configuration(['#topStories > div > a[href]', '.moreTopStories .
         'header': '.c-globalHero_content',
         'title': '.c-globalHero_content h1.c-globalHero_heading',
         'description': '.c-globalHero_content p.c-globalHero_description',
-        'authors': '.c-globalHero_content .c-globalAuthor_meta a.c-globalAuthor_link',
+        'authors': '.c-globalHero_content .c-globalAuthor_meta '
+                   'a.c-globalAuthor_link',
         'date': '.c-globalHero_content .c-globalAuthor_meta time'
     }
-])
+]
 
 
-def scrape_main_page():
+def scrape_main_page(config):
     """
     Scrapes the main site to look for the top 13 stories in the site. Given that
     the link point to a relative address, we build the full address for each
     story and return a list of the URLs that point to the top stories.
+
+    Args:
+        config: Configuration object that includes the patterns to extract from
+            the main page
 
     Returns:
     scrape_urls: list of URLs to the top stories in the site.
@@ -39,22 +50,21 @@ def scrape_main_page():
     page = requests.get(BASE_URL)
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    for pattern_to_search in CONFIGURATION.main_patterns_extract_urls:
+    for pattern_to_search in config.main_urls_pattern:
         top_stories = soup.select(pattern_to_search[0])
-        scrape_urls += [DOMAIN_URL + a.get(pattern_to_search[1]) for a in top_stories]
+        scrape_urls += [DOMAIN_URL + a.get(pattern_to_search[1])
+                        for a in top_stories]
 
     return scrape_urls
 
 
-def scrape_regular_story(soup, template):
+def scrape_story_content(soup, template):
     """
-    Scrapes a regular story site (most news follow this site structure, for
-    example: https://www.cnet.com/news/amazon-sued-repeatedly-for-lost-wages-avoids-paying-workers-for-long-waits-and-walks/
-    some can be different like the ones using Nuxt.js) looking for the title,
-    description, authors and published date.
+    Scrapes the provided site's content according to the provided template
+    structure looking for the title, description, authors and published date.
     Args:
-        soup (): BeautifulSoup object with the story site parsed
-        template: template to use for extract elements from soup
+        soup: BeautifulSoup object with the story site parsed
+        template: template to be used to extract the desired content of the site
 
     Returns:
         news_content: dictionary with the scraped data found in the site
@@ -79,26 +89,31 @@ def scrape_regular_story(soup, template):
     return news_content
 
 
-def scrape_story(url):
+def scrape_story(url, config):
     """
-    Given an URL for a story, it first check if it follows the regular structure
-    and calls the regular scraper. If it doesn't, it checks for the special full
-    width image structure and calls it. Otherwise it returns an error message.
+    Given an URL for a story and the configuration for the content to be
+    scraped, it first tries to match the site's header to a known site structure
+    and calls the content scraper if the structure is matched. \
+    If it doesn't match any of the known site structures, it will returns an
+    error message.
     If the scraper succeeds, it returns the scraped data.
+
     Args:
-        url (): URL for the story to be scraped
+        url: URL for the story to be scraped
+        config: Configuration object to be used to scrape each URL
 
     Returns:
-        news_content: dict with scraped data if succeeds or error if not known site structure
+        news_content: dict with scraped data if succeeds or error if not known
+            site structure
     """
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    for template in CONFIGURATION.templates:
+    for template in config.templates:
         header = soup.select(template['header'])
 
         if len(header) > 0:
-            news_content = scrape_regular_story(soup, template)
+            news_content = scrape_story_content(soup, template)
             news_content['url'] = url
 
             return news_content
@@ -106,11 +121,12 @@ def scrape_story(url):
     return {'url': url, 'error': NEWS_UNKNOWN_STRUCTURE}
 
 
-def scrape_stories(scrape_urls):
+def scrape_stories(scrape_urls, config):
     """
-    Scrape the pages for their urls
+    Scrape the provided URLs to get their data
 
     :param scrape_urls: urls of pages to scrape
+    :param config: Configuration object to be used to scrape each URL
     :return: scraped pages
     """
 
@@ -118,7 +134,7 @@ def scrape_stories(scrape_urls):
 
     for ix, news in enumerate(scrape_urls):
         print(f'Scraping story no. {ix + 1}...')
-        content = scrape_story(news)
+        content = scrape_story(news, config)
         results.append(content)
 
     return results
@@ -160,9 +176,12 @@ def save_results(results):
 
 
 def main():
-    urls = scrape_main_page()
+    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES)
+    print('CNET News Web Scraper initialized')
+    print('=================================\n')
+    urls = scrape_main_page(config)
     print('{} stories will be scraped'.format(len(urls)))
-    scrape_results = scrape_stories(urls)
+    scrape_results = scrape_stories(urls, config)
     save_results(scrape_results)
     print('{} stories were scraped!'.format(len(urls)))
 
