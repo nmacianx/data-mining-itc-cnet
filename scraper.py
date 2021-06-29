@@ -98,9 +98,12 @@ def scrape_stories(scrape_urls, config):
     """
     Scrape the provided URLs to get their data
 
-    :param scrape_urls: urls of pages to scrape
-    :param config: Configuration object to be used to scrape each URL
-    :return: scraped pages
+    Args:
+        scrape_urls: urls of pages to scrape
+        config: Configuration object to be used to scrape each URL
+
+    Returns:
+         scraped pages
     """
 
     results = []
@@ -122,7 +125,6 @@ def save_results(results):
         results (): list of objects where each object contains data associated
         to each story. The attributes for a story are: title, description,
         authors, date, URL, and optionally 'error'.
-
     """
     file_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), DESTINATION_FILE_NAME)
