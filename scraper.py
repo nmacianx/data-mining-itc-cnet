@@ -3,34 +3,7 @@ import requests
 import datetime
 import os
 from configuration import Configuration
-
-BASE_URL = "https://www.cnet.com/news/"
-DOMAIN_URL = "https://www.cnet.com"
-NEWS_UNKNOWN_STRUCTURE = "Can't scrape unknown website structure."
-DESTINATION_FILE_NAME = 'scraping.txt'
-
-CONFIG_MAIN_PATTERN = [
-    '#topStories > div > a[href]',
-    '.moreTopStories .assetBody > a[href]'
-]
-
-CONFIG_TEMPLATES = [
-    {
-        'header': '.content-header',
-        'title': '.content-header .c-head h1.speakableText',
-        'description': '.content-header .c-head p.c-head_dek',
-        'authors': '.content-header .c-assetAuthor_authors a.author',
-        'date': '.content-header .c-assetAuthor_date time'
-    },
-    {
-        'header': '.c-globalHero_content',
-        'title': '.c-globalHero_content h1.c-globalHero_heading',
-        'description': '.c-globalHero_content p.c-globalHero_description',
-        'authors': '.c-globalHero_content .c-globalAuthor_meta '
-                   'a.c-globalAuthor_link',
-        'date': '.c-globalHero_content .c-globalAuthor_meta time'
-    }
-]
+from settings import *
 
 
 def scrape_main_page(config):
@@ -177,7 +150,7 @@ def save_results(results):
 
 def main():
     config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES)
-    print('CNET News Web Scraper initialized')
+    print(CONSOLE_WELCOME_MESSAGE)
     print('=================================\n')
     urls = scrape_main_page(config)
     print('{} stories will be scraped'.format(len(urls)))
