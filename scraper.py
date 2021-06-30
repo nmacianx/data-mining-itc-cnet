@@ -75,6 +75,9 @@ class Scraper:
 
         for pattern in self.config.main_urls_pattern:
             top_stories = soup.select(pattern[0])
+            if len(top_stories) == 0:
+                raise RuntimeError('Error! Scraping the main site to get the'
+                                   'news list failed.')
             self.urls += [DOMAIN_URL + a.get(pattern[1]) for a in top_stories]
 
         if self.logging:
@@ -120,11 +123,12 @@ class Scraper:
                 story.set_url(url)
                 return story
 
-        print('Warning! An error occurred when trying to scrape: {}'
-              .format(url))
         if not self.fail_silently:
             raise RuntimeError('An error occurred when trying to scrape '
                                'the story: {}'.format(url))
+        else:
+            print('Warning! An error occurred when trying to scrape the story: '
+                  '{}'.format(url))
 
     @staticmethod
     def _scrape_story_content(soup, template, index):
@@ -150,8 +154,12 @@ class Scraper:
                     s[f['field']] = element[0].getText()
                 else:
                     s[f['field']] = [el.getText() for el in element]
-        story = Story(index + 1, s['title'], s['description'], s['date'],
-                      s['authors'])
+        try:
+            story = Story(index + 1, s['title'], s['description'], s['date'],
+                          s['authors'])
+        except ValueError as e:
+            print('Error! Something unexpected happened when scraping a story:')
+            raise ValueError(e)
 
         return story
 
