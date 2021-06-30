@@ -65,11 +65,11 @@ class Scraper:
 
     def scrape_stories(self):
         """
-        Scrape the provided URLs to get their data
-
-        :param scrape_urls: urls of pages to scrape
-        :param config: Configuration object to be used to scrape each URL
-        :return: scraped pages
+        Args:
+            scrape_urls: urls of pages to scrape
+            config: Configuration object to be used to scrape each URL
+        Returns:
+            scraped pages
         """
 
         for ix, url in enumerate(self.urls):
