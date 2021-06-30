@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 import datetime
 import os
-from configuration import Configuration
 from story import Story
 from settings import *
 
@@ -159,15 +158,3 @@ class Scraper:
             f.write('====================\n\n')
         if self.logging:
             print('Results were saved!')
-
-
-def main():
-    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES)
-    scraper = Scraper(config, logging=LOGGING, should_save=True,
-                      fail_silently=FAIL_SILENTLY,
-                      file_name=DESTINATION_FILE_NAME)
-    scraper.scrape()
-
-
-if __name__ == '__main__':
-    main()
