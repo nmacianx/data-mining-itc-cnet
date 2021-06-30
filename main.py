@@ -5,6 +5,9 @@ from settings import CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES, LOGGING, \
 
 
 def main():
+    """
+    Configures the Scraper, instantiates it and runs it
+    """
     config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES)
     scraper = Scraper(config, logging=LOGGING, should_save=True,
                       fail_silently=FAIL_SILENTLY,

@@ -7,8 +7,27 @@ from settings import *
 
 
 class Scraper:
+    """
+    Scraper class that scrapes CNET news site, gathers top stories' URLs and
+    scrapes its content. It can save the results to a text file.
+    """
     def __init__(self, config, logging=True, should_save=True,
                  fail_silently=False, file_name=None, file_full_path=False):
+        """
+        Constructor for the Scraper class
+        Args:
+            config (): Configuration object - Needed to define the way the site
+                is scraped
+            logging (): boolean - defines if program will print output to the
+                console or not
+            should_save (): boolean - can disable the data saving to the text
+                file. Mainly for testing
+            fail_silently (): boolean - if a story can't be scraped, it can stop
+                the program execution or skip that particular one
+            file_name (): string - file name to be used to save the data
+            file_full_path (): boolean - determines if the provided file_name
+                is a full path or just the name.
+        """
         self.config = config
         self.logging = logging
         self.should_save = should_save
@@ -35,6 +54,11 @@ class Scraper:
             print('=================================\n')
 
     def scrape(self):
+        """
+        Functions that runs the scraping process: gets the URLs for the top
+        stories, scrapes them and saves the results.
+
+        """
         self.scrape_main_page()
         self.scrape_stories()
         if self.should_save:
@@ -42,16 +66,9 @@ class Scraper:
 
     def scrape_main_page(self):
         """
-        Scrapes the main site to look for the top 13 stories in the site. Given that
-        the link point to a relative address, we build the full address for each
-        story and return a list of the URLs that point to the top stories.
-
-        Args:
-            config: Configuration object that includes the patterns to extract from
-                the main page
-
-        Returns:
-        scrape_urls: list of URLs to the top stories in the site.
+        Scrapes the main site to look for the top stories in the site. Given
+        that the link point to a relative address, we build the full address for
+        each story and saves the list of the URLs that point to the top stories.
         """
         page = requests.get(BASE_URL)
         soup = BeautifulSoup(page.content, 'html.parser')
@@ -65,13 +82,9 @@ class Scraper:
 
     def scrape_stories(self):
         """
-        Args:
-            scrape_urls: urls of pages to scrape
-            config: Configuration object to be used to scrape each URL
-        Returns:
-            scraped pages
+        Iterates over the existing URLs and calls the scraping method over each
+        of them. Saves the result in an object variable.
         """
-
         for ix, url in enumerate(self.urls):
             if self.logging:
                 print('Scraping story no. {}...'.format(ix + 1))
@@ -84,19 +97,18 @@ class Scraper:
     def _scrape_story(self, url, index):
         """
         Given an URL for a story and the configuration for the content to be
-        scraped, it first tries to match the site's header to a known site structure
-        and calls the content scraper if the structure is matched. \
-        If it doesn't match any of the known site structures, it will returns an
-        error message.
-        If the scraper succeeds, it returns the scraped data.
+        scraped, it tries to match the site's header to a known site structure
+        and calls the content scraper if the structure is matched.
+        If it doesn't match any of the known site structures, it will print an
+        error message and raise an exception.
+        If the scraper succeeds, it returns the scraped Story object.
 
         Args:
             url: URL for the story to be scraped
-            config: Configuration object to be used to scrape each URL
+            index: index to be assigned to the Story object
 
         Returns:
-            news_content: dict with scraped data if succeeds or error if not known
-                site structure
+            story: Story object with all the scraped information
         """
         page = requests.get(url)
         soup = BeautifulSoup(page.content, 'html.parser')
@@ -108,6 +120,8 @@ class Scraper:
                 story.set_url(url)
                 return story
 
+        print('Warning! An error occurred when trying to scrape: {}'
+              .format(url))
         if not self.fail_silently:
             raise RuntimeError('An error occurred when trying to scrape '
                                'the story: {}'.format(url))
@@ -116,13 +130,16 @@ class Scraper:
     def _scrape_story_content(soup, template, index):
         """
         Scrapes the provided site's content according to the provided template
-        structure looking for the title, description, authors and published date.
+        structure looking for the title, description, authors and published
+        date.
         Args:
             soup: BeautifulSoup object with the story site parsed
-            template: template to be used to extract the desired content of the site
+            template: template to be used to extract the desired content of the
+                site
+            index: index to be assigned to the Story object
 
         Returns:
-            news_content: dictionary with the scraped data found in the site
+            story: Story object with all the scraped information
         """
         s = {}
 
@@ -140,14 +157,9 @@ class Scraper:
 
     def save_results(self):
         """
-        Function that receives the scraped data and appends it to a text file in
-        a nicely formatted way, including the current datetime.
-
-        Args:
-            results (): list of objects where each object contains data associated
-            to each story. The attributes for a story are: title, description,
-            authors, date, URL, and optionally 'error'.
-
+        Function that appends the information for the scraped stories appends it
+        to a text file in a nicely formatted way, including the current
+        datetime.
         """
         with open(self.file_path, 'a') as f:
             f.write('Scraping session: {}\n'.format(
