@@ -7,10 +7,10 @@ class Configuration:
         """
         Build the Configuration class through the input parameter patterns
 
-        :param templates: list of all templates, in a dictionary structure,
-            to use for scrape the urls extracted
-        :param main_urls_pattern: patterns that will be used to
-            extract the elements.
+        Args:
+            templates: list of all templates, in a dictionary structure, to use for scrape the urls extracted
+            main_urls_pattern: patterns that will be used to extract the elements.
+
         Each must have the form of CSS selector
         .|#element > tag1 > taN > tag_with_attr_to_extract[href | src |
                                                             attribute of tag])
