@@ -29,7 +29,7 @@ listed in the file `requirements.txt` by running:
 ### Running the scraper
 In order to run the scraper, activate your virtual environment and run:
 
-`python scraper.py`
+`python main.py`
 
 It will create a `scraping.txt` file with the scraped data and append data to 
 the file each time it's run.

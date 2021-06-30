@@ -2,164 +2,159 @@ from bs4 import BeautifulSoup
 import requests
 import datetime
 import os
-from configuration import Configuration
+from story import Story
 from settings import *
 
 
-def scrape_main_page(config):
-    """
-    Scrapes the main site to look for the top 13 stories in the site. Given that
-    the link point to a relative address, we build the full address for each
-    story and return a list of the URLs that point to the top stories.
+class Scraper:
+    def __init__(self, config, logging=True, should_save=True,
+                 fail_silently=False, file_name=None, file_full_path=False):
+        self.config = config
+        self.logging = logging
+        self.should_save = should_save
+        self.fail_silently = fail_silently
+        self.urls = []
+        self.stories = []
+        if self.should_save and file_name is None:
+            raise ValueError('File name needs to be provided '
+                             'if should_save=True')
+        if file_full_path:
+            file_dir = os.path.dirname(file_name)
+            if file_dir:
+                if not os.path.isdir(file_dir):
+                    raise ValueError(ERROR_FILE_PATH)
+            else:
+                raise ValueError(ERROR_FILE_PATH)
+            self.file_path = file_name
+        else:
+            self.file_path = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)), file_name)
 
-    Args:
-        config: Configuration object that includes the patterns to extract from
-            the main page
+        if self.logging:
+            print(CONSOLE_WELCOME_MESSAGE)
+            print('=================================\n')
 
-    Returns:
-    scrape_urls: list of URLs to the top stories in the site.
-    """
-    scrape_urls = []
-    page = requests.get(BASE_URL)
-    soup = BeautifulSoup(page.content, 'html.parser')
+    def scrape(self):
+        self.scrape_main_page()
+        self.scrape_stories()
+        if self.should_save:
+            self.save_results()
 
-    for pattern_to_search in config.main_urls_pattern:
-        top_stories = soup.select(pattern_to_search[0])
-        scrape_urls += [DOMAIN_URL + a.get(pattern_to_search[1])
-                        for a in top_stories]
+    def scrape_main_page(self):
+        """
+        Scrapes the main site to look for the top 13 stories in the site. Given that
+        the link point to a relative address, we build the full address for each
+        story and return a list of the URLs that point to the top stories.
 
-    return scrape_urls
+        Args:
+            config: Configuration object that includes the patterns to extract from
+                the main page
 
+        Returns:
+        scrape_urls: list of URLs to the top stories in the site.
+        """
+        page = requests.get(BASE_URL)
+        soup = BeautifulSoup(page.content, 'html.parser')
 
-def scrape_story_content(soup, template):
-    """
-    Scrapes the provided site's content according to the provided template
-    structure looking for the title, description, authors and published date.
-    Args:
-        soup: BeautifulSoup object with the story site parsed
-        template: template to be used to extract the desired content of the site
+        for pattern in self.config.main_urls_pattern:
+            top_stories = soup.select(pattern[0])
+            self.urls += [DOMAIN_URL + a.get(pattern[1]) for a in top_stories]
 
-    Returns:
-        news_content: dictionary with the scraped data found in the site
-    """
-    news_content = {}
-    header = soup.select(template['title'])
-    if len(header) > 0:
-        news_content['title'] = header[0].getText()
+        if self.logging:
+            print('{} stories will be scraped'.format(len(self.urls)))
 
-    description = soup.select(template['description'])
-    if len(description) > 0:
-        news_content['description'] = description[0].getText()
+    def scrape_stories(self):
+        """
+        Args:
+            scrape_urls: urls of pages to scrape
+            config: Configuration object to be used to scrape each URL
+        Returns:
+            scraped pages
+        """
 
-    authors = soup.select(template['authors'])
-    if len(authors) > 0:
-        news_content['authors'] = [a.getText() for a in authors]
+        for ix, url in enumerate(self.urls):
+            if self.logging:
+                print('Scraping story no. {}...'.format(ix + 1))
+            story = self._scrape_story(url, ix)
+            if story is not None:
+                self.stories.append(story)
+        if self.logging:
+            print('{} stories were scraped!'.format(len(self.urls)))
 
-    date = soup.select(template['date'])
-    if len(date) > 0:
-        news_content['date'] = date[0].getText()
+    def _scrape_story(self, url, index):
+        """
+        Given an URL for a story and the configuration for the content to be
+        scraped, it first tries to match the site's header to a known site structure
+        and calls the content scraper if the structure is matched. \
+        If it doesn't match any of the known site structures, it will returns an
+        error message.
+        If the scraper succeeds, it returns the scraped data.
 
-    return news_content
+        Args:
+            url: URL for the story to be scraped
+            config: Configuration object to be used to scrape each URL
 
+        Returns:
+            news_content: dict with scraped data if succeeds or error if not known
+                site structure
+        """
+        page = requests.get(url)
+        soup = BeautifulSoup(page.content, 'html.parser')
 
-def scrape_story(url, config):
-    """
-    Given an URL for a story and the configuration for the content to be
-    scraped, it first tries to match the site's header to a known site structure
-    and calls the content scraper if the structure is matched. \
-    If it doesn't match any of the known site structures, it will returns an
-    error message.
-    If the scraper succeeds, it returns the scraped data.
+        for template in self.config.templates:
+            header = soup.select(template['header'])
+            if len(header) > 0:
+                story = self._scrape_story_content(soup, template, index)
+                story.set_url(url)
+                return story
 
-    Args:
-        url: URL for the story to be scraped
-        config: Configuration object to be used to scrape each URL
+        if not self.fail_silently:
+            raise RuntimeError('An error occurred when trying to scrape '
+                               'the story: {}'.format(url))
 
-    Returns:
-        news_content: dict with scraped data if succeeds or error if not known
-            site structure
-    """
-    page = requests.get(url)
-    soup = BeautifulSoup(page.content, 'html.parser')
+    @staticmethod
+    def _scrape_story_content(soup, template, index):
+        """
+        Scrapes the provided site's content according to the provided template
+        structure looking for the title, description, authors and published date.
+        Args:
+            soup: BeautifulSoup object with the story site parsed
+            template: template to be used to extract the desired content of the site
 
-    for template in config.templates:
-        header = soup.select(template['header'])
+        Returns:
+            news_content: dictionary with the scraped data found in the site
+        """
+        s = {}
 
-        if len(header) > 0:
-            news_content = scrape_story_content(soup, template)
-            news_content['url'] = url
+        for f in STORY_SCRAPE_FIELDS:
+            element = soup.select(template[f['field']])
+            if len(element) > 0:
+                if not f['multiple']:
+                    s[f['field']] = element[0].getText()
+                else:
+                    s[f['field']] = [el.getText() for el in element]
+        story = Story(index + 1, s['title'], s['description'], s['date'],
+                      s['authors'])
 
-            return news_content
+        return story
 
-    return {'url': url, 'error': NEWS_UNKNOWN_STRUCTURE}
+    def save_results(self):
+        """
+        Function that receives the scraped data and appends it to a text file in
+        a nicely formatted way, including the current datetime.
 
+        Args:
+            results (): list of objects where each object contains data associated
+            to each story. The attributes for a story are: title, description,
+            authors, date, URL, and optionally 'error'.
 
-def scrape_stories(scrape_urls, config):
-    """
-    Scrape the provided URLs to get their data
-
-    Args:
-        scrape_urls: urls of pages to scrape
-        config: Configuration object to be used to scrape each URL
-
-    Returns:
-         scraped pages
-    """
-
-    results = []
-
-    for ix, news in enumerate(scrape_urls):
-        print(f'Scraping story no. {ix + 1}...')
-        content = scrape_story(news, config)
-        results.append(content)
-
-    return results
-
-
-def save_results(results):
-    """
-    Function that receives the scraped data and appends it to a text file in
-    a nicely formatted way, including the current datetime.
-
-    Args:
-        results (): list of objects where each object contains data associated
-        to each story. The attributes for a story are: title, description,
-        authors, date, URL, and optionally 'error'.
-    """
-    file_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), DESTINATION_FILE_NAME)
-    with open(file_path, 'a') as f:
-        f.write('Scraping session: {}\n'.format(
-            datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
-        f.write('====================\n')
-        for ix, news in enumerate(results):
-            f.write('\n\nStory {}:\n'.format(ix + 1))
-            if 'title' in news:
-                f.write('Title: {}\n'.format(news['title'].strip()))
-            if 'description' in news:
-                f.write('Description: {}\n'.format(news['description'].strip()))
-            if 'authors' in news:
-                authors = ', '.join(news['authors'])
-                f.write('Author/s: {}\n'.format(authors.strip()))
-            if 'date' in news:
-                f.write('Published date: {}\n'.format(news['date'].strip()))
-            if 'url' in news:
-                f.write('URL: {}\n'.format(news['url']))
-            if 'error' in news:
-                f.write('Error: {}\n'.format(news['error']))
-        f.write('====================\n\n')
-
-
-def main():
-    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES)
-    print(CONSOLE_WELCOME_MESSAGE)
-    print('=================================\n')
-    urls = scrape_main_page(config)
-    print('{} stories will be scraped'.format(len(urls)))
-    scrape_results = scrape_stories(urls, config)
-    save_results(scrape_results)
-    print('{} stories were scraped!'.format(len(urls)))
-
-
-if __name__ == '__main__':
-    main()
+        """
+        with open(self.file_path, 'a') as f:
+            f.write('Scraping session: {}\n'.format(
+                datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
+            f.write('====================\n')
+            for story in self.stories:
+                f.writelines(story.get_full_info_lines())
+            f.write('====================\n\n')
+        if self.logging:
+            print('Results were saved!')
