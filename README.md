@@ -29,7 +29,17 @@ listed in the file `requirements.txt` by running:
 ### Running the scraper
 In order to run the scraper, activate your virtual environment and run:
 
-`python main.py`
+`python main.py [-h] [-a AUTHOR] [-t TAG] [-c] [-v] {top_stories,tag,author}`
+
+* Mandatory arguments:
+    - mode: can be `top_stories`, `tag` or `author`.
+    - `-a --author`: author to scrape if mode = `author`.
+    - `-t --tag`: tag to scrape if mode = `tag`.
+* Optional arguments:
+    - `-h --help`: get help for running the scraper.
+    - `-c --console`: print the results to the console instead of saving them.
+    - `-v --verbose`: log status information to the console while running the 
+      scraper.
 
 It will create a `scraping.txt` file with the scraped data and append data to 
 the file each time it's run.

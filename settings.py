@@ -1,7 +1,11 @@
 # Scraper User Settings
-LOGGING = True
-SHOULD_SAVE = True
 FAIL_SILENTLY = False
+
+MODE_TOP_STORIES = 'top_stories'
+MODE_TAG = 'tag'
+MODE_AUTHOR = 'author'
+
+SCRAPE_MODE = [MODE_TOP_STORIES, MODE_TAG, MODE_AUTHOR]
 
 # Scraper internal config
 BASE_URL = "https://www.cnet.com/news/"

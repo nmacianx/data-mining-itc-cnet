@@ -63,6 +63,8 @@ class Scraper:
         self.scrape_stories()
         if self.should_save:
             self.save_results()
+        else:
+            self.print_results()
 
     def scrape_main_page(self):
         """
@@ -178,3 +180,18 @@ class Scraper:
             f.write('====================\n\n')
         if self.logging:
             print('Results were saved!')
+
+    def print_results(self):
+        """
+        Function that prints to the console the information for the scraped
+        stories in a nicely formatted way, including the current
+        datetime.
+        """
+        print('Scraping session: {}\n'.format(
+            datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
+        print('====================\n')
+        for story in self.stories:
+            story_text = story.get_full_info_lines()
+            for line in story_text:
+                print(line)
+        print('====================\n\n')
