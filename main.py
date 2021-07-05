@@ -53,7 +53,8 @@ def main():
     try:
         scraper = Scraper(config, logging=logging, should_save=should_save,
                           fail_silently=FAIL_SILENTLY,
-                          file_name=DESTINATION_FILE_NAME)
+                          file_name=DESTINATION_FILE_NAME,
+                          mode=args.mode, author=args.author, tag=args.tag)
         scraper.scrape()
     except ValueError as e:
         print(e)

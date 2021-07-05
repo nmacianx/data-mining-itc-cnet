@@ -12,21 +12,26 @@ class Scraper:
     scrapes its content. It can save the results to a text file.
     """
     def __init__(self, config, logging=True, should_save=True,
-                 fail_silently=False, file_name=None, file_full_path=False):
+                 mode=MODE_TOP_STORIES, fail_silently=False, file_name=None,
+                 file_full_path=False, author=None, tag=None):
         """
         Constructor for the Scraper class
         Args:
-            config (): Configuration object - Needed to define the way the site
+            config: Configuration object - Needed to define the way the site
                 is scraped
-            logging (): boolean - defines if program will print output to the
+            logging: boolean - defines if program will print output to the
                 console or not
-            should_save (): boolean - can disable the data saving to the text
+            mode: can either be 'top_stories', 'author' or 'tag'. Will
+                determine the scraper entry point.
+            should_save: boolean - can disable the data saving to the text
                 file. Mainly for testing
-            fail_silently (): boolean - if a story can't be scraped, it can stop
+            fail_silently: boolean - if a story can't be scraped, it can stop
                 the program execution or skip that particular one
-            file_name (): string - file name to be used to save the data
-            file_full_path (): boolean - determines if the provided file_name
+            file_name: string - file name to be used to save the data
+            file_full_path: boolean - determines if the provided file_name
                 is a full path or just the name.
+            author: author to scrape if mode is set to author.
+            tag: tag to scrape if mode is set to tag.
         """
         self.config = config
         self.logging = logging
@@ -34,6 +39,20 @@ class Scraper:
         self.fail_silently = fail_silently
         self.urls = []
         self.stories = []
+        self.author = author
+        self.tag = tag
+
+        if mode not in SCRAPE_MODE:
+            raise ValueError('Scrape mode can only take one of the three '
+                             'values: top_stories, author or tag')
+        self.mode = mode
+        if self.mode == MODE_AUTHOR and author is None:
+            raise AttributeError('An author needs to be passed to the scraper '
+                                 'because author mode was set.')
+        if self.mode == MODE_TAG and tag is None:
+            raise AttributeError('A tag needs to be passed to the scraper '
+                                 'because tag mode was set.')
+
         if self.should_save and file_name is None:
             raise ValueError('File name needs to be provided '
                              'if should_save=True')
@@ -57,16 +76,15 @@ class Scraper:
         """
         Functions that runs the scraping process: gets the URLs for the top
         stories, scrapes them and saves the results.
-
         """
-        self.scrape_main_page()
+        self.scrape_top_stories_page()
         self.scrape_stories()
         if self.should_save:
             self.save_results()
         else:
             self.print_results()
 
-    def scrape_main_page(self):
+    def scrape_top_stories_page(self):
         """
         Scrapes the main site to look for the top stories in the site. Given
         that the link point to a relative address, we build the full address for
