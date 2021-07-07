@@ -9,6 +9,7 @@ SCRAPE_MODE = [MODE_TOP_STORIES, MODE_TAG, MODE_AUTHOR]
 
 # Scraper internal config
 BASE_URL = "https://www.cnet.com/news/"
+BASE_AUTHOR_URL = "https://www.cnet.com/profiles/"
 DOMAIN_URL = "https://www.cnet.com"
 DESTINATION_FILE_NAME = 'scraping.txt'
 
@@ -55,9 +56,46 @@ STORY_SCRAPE_FIELDS = [
     {
         'field': 'authors',
         'multiple': True,
+        'attr': 'href',
     },
     {
         'field': 'date',
         'multiple': False,
+    },
+]
+
+AUTHOR_PREFIX = '#profile-info'
+CONFIG_AUTHOR_TEMPLATE = {
+    'name': AUTHOR_PREFIX + ' h1 > span[itemprop="name"]',
+    'member_since': AUTHOR_PREFIX + '> div:nth-child(3) > p:nth-child(1)',
+    'location': AUTHOR_PREFIX + ' p[itemprop="address"] > span',
+    'occupation': AUTHOR_PREFIX + ' p > span[itemprop="title"]',
+    'website': AUTHOR_PREFIX + ' p > span[itemprop="url"]',
+
+}
+
+AUTHOR_SCRAPE_FIELDS = [
+    {
+        'field': 'name',
+        'multiple': False,
+    },
+    {
+        'field': 'member_since',
+        'multiple': False,
+    },
+    {
+        'field': 'location',
+        'multiple': False,
+        'optional': True,
+    },
+    {
+        'field': 'occupation',
+        'multiple': False,
+        'optional': True,
+    },
+    {
+        'field': 'website',
+        'multiple': False,
+        'optional': True,
     },
 ]
