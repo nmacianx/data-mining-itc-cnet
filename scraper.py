@@ -3,6 +3,7 @@ import requests
 import datetime
 import os
 from story import Story
+from author import Author
 from settings import *
 
 
@@ -39,6 +40,7 @@ class Scraper:
         self.fail_silently = fail_silently
         self.urls = []
         self.stories = []
+        self.authors = []
         self.author = author
         self.tag = tag
 
@@ -136,7 +138,7 @@ class Scraper:
         page = requests.get(url)
         soup = BeautifulSoup(page.content, 'html.parser')
 
-        for template in self.config.templates:
+        for template in self.config.story_templates:
             header = soup.select(template['header'])
             if len(header) > 0:
                 story = self._scrape_story_content(soup, template, index)
@@ -150,12 +152,12 @@ class Scraper:
             print('Warning! An error occurred when trying to scrape the story: '
                   '{}'.format(url))
 
-    @staticmethod
-    def _scrape_story_content(soup, template, index):
+    def _scrape_story_content(self, soup, template, index):
         """
         Scrapes the provided site's content according to the provided template
         structure looking for the title, description, authors and published
-        date.
+        date. It call a function to get or create the authors if they haven't
+        been scraped before.
         Args:
             soup: BeautifulSoup object with the story site parsed
             template: template to be used to extract the desired content of the
@@ -165,23 +167,87 @@ class Scraper:
         Returns:
             story: Story object with all the scraped information
         """
-        s = {}
-
-        for f in STORY_SCRAPE_FIELDS:
-            element = soup.select(template[f['field']])
-            if len(element) > 0:
-                if not f['multiple']:
-                    s[f['field']] = element[0].getText()
-                else:
-                    s[f['field']] = [el.getText() for el in element]
+        s = self._scrape_obj(soup, template, STORY_SCRAPE_FIELDS)
+        authors = [a.split('profiles/')[1][:-1] for a in s['authors']]
+        authors_created = self._get_or_create_authors(authors)
         try:
             story = Story(index + 1, s['title'], s['description'], s['date'],
-                          s['authors'])
+                          authors_created)
         except ValueError as e:
             print('Error! Something unexpected happened when scraping a story:')
             raise ValueError(e)
 
         return story
+
+    @staticmethod
+    def _scrape_obj(soup, template, fields):
+        """
+        Function that retrieves the fields specified according to a template in
+        the provided site parsed by BS4.
+        Args:
+            soup: BeautifulSoup instance of a site to scrape an object's data
+            template: template to be used to extract the desired content of the
+                site.
+            fields: dictionary of fields to scrape according to a template. It
+                provides configuration for how to get the values.
+
+        Returns:
+            s: dictionary of scraped object with the attributes retrieved.
+        """
+        s = {}
+        for f in fields:
+            element = soup.select(template[f['field']])
+            if len(element) > 0:
+                if 'attr' not in f:
+                    if not f['multiple']:
+                        s[f['field']] = element[0].getText()
+                    else:
+                        s[f['field']] = [el.getText() for el in element]
+                else:
+                    if not f['multiple']:
+                        s[f['field']] = element[0][f['attr']]
+                    else:
+                        s[f['field']] = [el[f['attr']] for el in element]
+            elif 'optional' in f and f['optional']:
+                s[f['field']] = None
+        return s
+
+    def _scrape_author(self, username):
+        page = requests.get(BASE_AUTHOR_URL + username)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        template = self.config.get_author_template()
+        s = self._scrape_obj(soup, template, AUTHOR_SCRAPE_FIELDS)
+        for field in AUTHOR_SCRAPE_FIELDS:
+            if field['field'] not in s:
+                print('Error! Something unexpected happened when scraping '
+                      'an Author:')
+                raise RuntimeError("Field '{}' is missing when trying "
+                                   "to scrape Author: {}".format(field['field'],
+                                                                 username))
+
+        try:
+            author = Author(username, s['name'], s['member_since'],
+                            location=s['location'], occupation=s['occupation'],
+                            website=s['website'])
+        except ValueError as e:
+            print('Error! Something unexpected happened when scraping the '
+                  'Author: {}'.format(username))
+            raise ValueError(e)
+        self.authors.append(author)
+        return author
+
+    def _get_or_create_authors(self, authors):
+        result = []
+        for a in authors:
+            found = None
+            for author_obj in self.authors:
+                if a == author_obj.get_username():
+                    found = author_obj
+            if found is not None:
+                result.append(found)
+            else:
+                result.append(self._scrape_author(a))
+        return result
 
     def save_results(self):
         """
@@ -198,18 +264,25 @@ class Scraper:
             f.write('====================\n\n')
         if self.logging:
             print('Results were saved!')
+        #  TODO: Need to save data to the database, add Author data
 
     def print_results(self):
         """
         Function that prints to the console the information for the scraped
         stories in a nicely formatted way, including the current
-        datetime.
+        datetime. It also prints the information for the authors of those
+        stories.
         """
         print('Scraping session: {}\n'.format(
             datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
         print('====================\n')
         for story in self.stories:
-            story_text = story.get_full_info_lines()
-            for line in story_text:
+            text = story.get_full_info_lines()
+            for line in text:
+                print(line)
+        print('====================')
+        for author in self.authors:
+            text = author.get_full_info_lines()
+            for line in text:
                 print(line)
         print('====================\n\n')

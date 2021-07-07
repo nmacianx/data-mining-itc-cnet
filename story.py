@@ -7,12 +7,12 @@ class Story:
         """
         Creates an instance object for the Story class
         Args:
-            index (): int - needed to print the number of story when saving
-            title (): string - title of the story
-            description (): string - description of the story
-            date (): string - published date of the story
-            authors (): list of authors for the story
-            url (): story's original URL
+            index: int - needed to print the number of story when saving
+            title: string - title of the story
+            description: string - description of the story
+            date: string - published date of the story
+            authors: list of Author objects that wrote the story
+            url: story's original URL
         """
         if index is None:
             raise ValueError('An index needs to be provided to a Story.')
@@ -22,17 +22,16 @@ class Story:
             raise ValueError('A description needs to be provided to a Story.')
         if date is None:
             raise ValueError('A date needs to be provided to a Story.')
+        if authors is None or (isinstance(authors, list) and len(authors) == 0):
+            raise ValueError('At least one author needs to be provided to a '
+                             'Story.')
 
         self.index = index
         self.title = title.strip()
         self.description = description.strip()
         self.date = date.strip()
         self.url = url
-
-        if authors is not None:
-            self.authors = ', '.join([a.strip() for a in authors])
-        else:
-            self.authors = None
+        self.authors = authors
 
     def __str__(self):
         """
@@ -58,7 +57,8 @@ class Story:
         lines = ['\n\nStory {}:\n'.format(self.index),
                  'Title: {}\n'.format(self.title),
                  'Description: {}\n'.format(self.description),
-                 'Author/s: {}\n'.format(self.authors),
+                 'Author/s: {}\n'.format(', '.join(
+                     map(lambda a: a.get_username(), self.authors))),
                  'Date: {}\n'.format(self.date),
                  'URL: {}\n'.format(self.url)]
 
