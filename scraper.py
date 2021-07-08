@@ -4,6 +4,7 @@ import datetime
 import os
 from story import Story
 from author import Author
+from tag import Tag
 from settings import *
 
 
@@ -12,6 +13,7 @@ class Scraper:
     Scraper class that scrapes CNET news site, gathers top stories' URLs and
     scrapes its content. It can save the results to a text file.
     """
+
     def __init__(self, config, logging=True, should_save=True,
                  mode=MODE_TOP_STORIES, fail_silently=False, file_name=None,
                  file_full_path=False, author=None, tag=None, number=None):
@@ -42,6 +44,7 @@ class Scraper:
         self.urls = []
         self.stories = []
         self.authors = []
+        self.tags = []
         self.author = author
         self.tag = tag
         self.number = number
@@ -173,11 +176,28 @@ class Scraper:
             story: Story object with all the scraped information
         """
         s = self._scrape_obj(soup, template, STORY_SCRAPE_FIELDS)
+        tags = self._scrape_obj(soup, self.config.get_stories_tag_template(),
+                                STORY_TAG_SCRAPE_FIELDS)
+        tags_topic = self._scrape_obj(
+            soup,
+            self.config.get_stories_tag_topic_template(),
+            STORY_TAG_SCRAPE_FIELDS)
         authors = [a.split('profiles/')[1][:-1] for a in s['authors']]
         authors_created = self._get_or_create_authors(authors)
+
+        tags_parsed = []
+        tags_topic_parsed = []
+        if 'name' in tags and 'url' in tags:
+            tags_parsed = zip(tags['name'], tags['url'])
+        if 'name' in tags_topic and 'url' in tags_topic:
+            tags_topic_parsed = zip(tags_topic['name'], tags_topic['url'])
+
+        tags = self._get_or_create_tags(tags_parsed)
+        tags_topic = self._get_or_create_tags(tags_topic_parsed)
+        tags += tags_topic
         try:
             story = Story(index + 1, s['title'], s['description'], s['date'],
-                          authors_created)
+                          authors_created, tags=tags)
         except ValueError as e:
             print('Error! Something unexpected happened when scraping a story:')
             raise ValueError(e)
@@ -210,14 +230,24 @@ class Scraper:
                         s[f['field']] = [el.getText() for el in element]
                 else:
                     if not f['multiple']:
-                        s[f['field']] = element[0][f['attr']]
+                        s[f['field']] = element[0].get(f['attr'], None)
                     else:
-                        s[f['field']] = [el[f['attr']] for el in element]
+                        s[f['field']] = [el.get(f['attr'], None)
+                                         for el in element]
             elif 'optional' in f and f['optional']:
                 s[f['field']] = None
         return s
 
     def _scrape_author(self, username):
+        """
+        Scrapes an author with a given username, creates the instance, adds it
+        to the scraper's known authors and returns it.
+        Args:
+            username: username for the author to scrape
+
+        Returns:
+            author: Author object for the author scraped
+        """
         page = requests.get(BASE_AUTHOR_URL + username)
         soup = BeautifulSoup(page.content, 'html.parser')
         template = self.config.get_author_template()
@@ -242,6 +272,16 @@ class Scraper:
         return author
 
     def _get_or_create_authors(self, authors):
+        """
+        Given a list of authors' usernames, it returns a list of Author objects.
+        It checks if the desired author was already scraped or it will be
+        scraped if it wasn't before
+        Args:
+            authors: list of authors' usernames
+
+        Returns:
+            result: list of Author objects
+        """
         result = []
         for a in authors:
             found = None
@@ -252,6 +292,33 @@ class Scraper:
                 result.append(found)
             else:
                 result.append(self._scrape_author(a))
+        return result
+
+    def _get_or_create_tags(self, tags):
+        """
+        Given a list of tags as tuples, it returns a list of Tag objects.
+        It checks if the desired tag was already created or it will do it.
+        Args:
+            tags: list of tags tuples following the structure (name, URL)
+
+        Returns:
+            result: list of Tag objects
+        """
+        result = []
+        for t in tags:
+            if t[0] is not None and t[1] is not None:
+                found = None
+                for tag in self.tags:
+                    if t[1] == tag.get_url():
+                        found = tag
+                if found is not None:
+                    result.append(found)
+                else:
+                    try:
+                        new_tag = Tag(name=t[0], url=t[1])
+                        result.append(new_tag)
+                    except AttributeError as e:
+                        pass
         return result
 
     def save_results(self):

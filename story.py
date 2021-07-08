@@ -3,7 +3,7 @@ class Story:
     Class that holds all the information related to a news story
     """
     def __init__(self, index, title, description,
-                 date, authors=None, url=None):
+                 date, authors=None, url=None, tags=None):
         """
         Creates an instance object for the Story class
         Args:
@@ -13,6 +13,7 @@ class Story:
             date: string - published date of the story
             authors: list of Author objects that wrote the story
             url: story's original URL
+            tags: list of Tag objects
         """
         if index is None:
             raise ValueError('An index needs to be provided to a Story.')
@@ -32,6 +33,7 @@ class Story:
         self.date = date.strip()
         self.url = url
         self.authors = authors
+        self.tags = tags
 
     def __str__(self):
         """
@@ -61,5 +63,10 @@ class Story:
                      map(lambda a: a.get_username(), self.authors))),
                  'Date: {}\n'.format(self.date),
                  'URL: {}\n'.format(self.url)]
+        if self.tags is not None and len(self.tags) > 0:
+            tags_lines = ['Tags: \n']
+            for t in self.tags:
+                tags_lines.append('- {}'.format(str(t)))
+            lines += tags_lines
 
         return lines

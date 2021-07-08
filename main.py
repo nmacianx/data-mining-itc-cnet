@@ -3,7 +3,8 @@ from configuration import Configuration
 from scraper import Scraper
 from settings import CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES, SCRAPE_MODE, \
     FAIL_SILENTLY, DESTINATION_FILE_NAME, MODE_TAG, MODE_TOP_STORIES, \
-    MODE_AUTHOR, CONFIG_AUTHOR_TEMPLATE
+    MODE_AUTHOR, CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE, \
+    CONFIG_STORIES_TAG_TOPIC_TEMPLATE
 
 
 def main():
@@ -28,7 +29,6 @@ def main():
     args = parser.parse_args()
     should_save = True
     logging = False
-    number = None
     if args.console:
         should_save = False
     if args.verbose:
@@ -53,7 +53,8 @@ def main():
         parser.error("Incorrect arguments. Can't set tag and author together.")
 
     config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
-                           CONFIG_AUTHOR_TEMPLATE)
+                           CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
+                           CONFIG_STORIES_TAG_TOPIC_TEMPLATE)
     try:
         scraper = Scraper(config, logging=logging, should_save=should_save,
                           fail_silently=FAIL_SILENTLY,
@@ -64,6 +65,9 @@ def main():
         print(e)
         exit(1)
     except RuntimeError as e:
+        print(e)
+        exit(2)
+    except AttributeError as e:
         print(e)
         exit(2)
     except OSError as e:
