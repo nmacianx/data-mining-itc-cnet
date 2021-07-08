@@ -99,3 +99,27 @@ AUTHOR_SCRAPE_FIELDS = [
         'optional': True,
     },
 ]
+
+STORY_TAGS_SELECTOR = '.tagList > a.tag:not(.broadInterest)'
+CONFIG_STORIES_TAG_TEMPLATE = {
+    'name': STORY_TAGS_SELECTOR,
+    'url': STORY_TAGS_SELECTOR,
+}
+
+STORY_TAGS_TOPIC_PREFIX = '.tagList > a.tag.broadInterest'
+CONFIG_STORIES_TAG_TOPIC_TEMPLATE = {
+    'name': STORY_TAGS_TOPIC_PREFIX + ' span.text',
+    'url': STORY_TAGS_TOPIC_PREFIX,
+}
+
+STORY_TAG_SCRAPE_FIELDS = [
+    {
+        'field': 'name',
+        'multiple': True,
+    },
+    {
+        'field': 'url',
+        'multiple': True,
+        'attr': 'href',
+    },
+]

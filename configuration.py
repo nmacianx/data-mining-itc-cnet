@@ -3,7 +3,8 @@ class Configuration:
     Class in charge of handling everything related to the scraper's settings
     """
 
-    def __init__(self, main_urls_pattern, story_templates, author_template):
+    def __init__(self, main_urls_pattern, story_templates, author_template,
+                 stories_tag_template, stories_tag_topic_template):
         """
         Build the Configuration class through the input parameter patterns
 
@@ -13,6 +14,9 @@ class Configuration:
             story_templates: list of all templates, in a dictionary structure,
                 to use for scrape the stories from the extracted urls
             author_template: template to use to scrape an author
+            stories_tag_template: template to use to scrape tags from stories
+            stories_tag_topic_template: template to use to scrape special topic
+                tags from stories
 
         Each must have the form of CSS selector
         .|#element > tag1 > taN > tag_with_attr_to_extract[href | src |
@@ -50,6 +54,8 @@ class Configuration:
         self._fix_main_patterns_extract_urls()
         self.story_templates = story_templates
         self.author_template = author_template
+        self.stories_tag_template = stories_tag_template
+        self.stories_tag_topic_template = stories_tag_topic_template
 
     def _fix_main_patterns_extract_urls(self):
         """
@@ -66,3 +72,15 @@ class Configuration:
         Returns the author template
         """
         return self.author_template
+
+    def get_stories_tag_template(self):
+        """
+        Returns the stories' tag template
+        """
+        return self.stories_tag_template
+
+    def get_stories_tag_topic_template(self):
+        """
+        Returns the stories' tag template, specific when the tag is a topic
+        """
+        return self.stories_tag_topic_template
