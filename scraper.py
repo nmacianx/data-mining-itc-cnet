@@ -14,7 +14,7 @@ class Scraper:
     """
     def __init__(self, config, logging=True, should_save=True,
                  mode=MODE_TOP_STORIES, fail_silently=False, file_name=None,
-                 file_full_path=False, author=None, tag=None):
+                 file_full_path=False, author=None, tag=None, number=None):
         """
         Constructor for the Scraper class
         Args:
@@ -33,6 +33,7 @@ class Scraper:
                 is a full path or just the name.
             author: author to scrape if mode is set to author.
             tag: tag to scrape if mode is set to tag.
+            number: optional - limit the amount of stories to scrape.
         """
         self.config = config
         self.logging = logging
@@ -43,6 +44,7 @@ class Scraper:
         self.authors = []
         self.author = author
         self.tag = tag
+        self.number = number
 
         if mode not in SCRAPE_MODE:
             raise ValueError('Scrape mode can only take one of the three '
@@ -101,6 +103,9 @@ class Scraper:
                 raise RuntimeError('Error! Scraping the main site to get the'
                                    'news list failed.')
             self.urls += [DOMAIN_URL + a.get(pattern[1]) for a in top_stories]
+
+        if self.number is not None:
+            self.urls = self.urls[:self.number]
 
         if self.logging:
             print('{} stories will be scraped'.format(len(self.urls)))

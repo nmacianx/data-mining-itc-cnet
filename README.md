@@ -36,6 +36,7 @@ In order to run the scraper, activate your virtual environment and run:
     - `-a --author`: author to scrape if mode = `author`.
     - `-t --tag`: tag to scrape if mode = `tag`.
 * Optional arguments:
+    - `-n --number`: limit the number of stories to scrape.
     - `-h --help`: get help for running the scraper.
     - `-c --console`: print the results to the console instead of saving them.
     - `-v --verbose`: log status information to the console while running the 

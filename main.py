@@ -16,6 +16,8 @@ def main():
                              "an author or a tag.")
     parser.add_argument('-a', '--author',
                         help="The author to scrape if mode is author.")
+    parser.add_argument('-n', '--number', type=int,
+                        help="Amount of stories to scrape.")
     parser.add_argument('-t', '--tag',
                         help="The tag to scrape if mode is tag.")
     parser.add_argument('-c', "--console", action='store_true',
@@ -26,6 +28,7 @@ def main():
     args = parser.parse_args()
     should_save = True
     logging = False
+    number = None
     if args.console:
         should_save = False
     if args.verbose:
@@ -54,8 +57,8 @@ def main():
     try:
         scraper = Scraper(config, logging=logging, should_save=should_save,
                           fail_silently=FAIL_SILENTLY,
-                          file_name=DESTINATION_FILE_NAME,
-                          mode=args.mode, author=args.author, tag=args.tag)
+                          file_name=DESTINATION_FILE_NAME, mode=args.mode,
+                          author=args.author, tag=args.tag, number=args.number)
         scraper.scrape()
     except ValueError as e:
         print(e)
