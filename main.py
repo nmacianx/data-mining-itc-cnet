@@ -6,6 +6,8 @@ from settings import CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES, SCRAPE_MODE, \
     MODE_AUTHOR, CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE, \
     CONFIG_STORIES_TAG_TOPIC_TEMPLATE
 
+TESTING = True
+
 
 def main():
     """
@@ -75,5 +77,33 @@ def main():
         exit(3)
 
 
+def main_testing():
+    """
+    Test the main method
+    """
+
+    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
+                           CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
+                           CONFIG_STORIES_TAG_TOPIC_TEMPLATE)
+    try:
+        scraper = Scraper(config, False, file_name=DESTINATION_FILE_NAME)
+        scraper.scrape()
+    except ValueError as e:
+        print(e)
+        exit(1)
+    except RuntimeError as e:
+        print(e)
+        exit(2)
+    except AttributeError as e:
+        print(e)
+        exit(2)
+    except OSError as e:
+        print(e)
+        exit(3)
+
+
 if __name__ == '__main__':
-    main()
+    if TESTING:
+        main_testing()
+    else:
+        main()

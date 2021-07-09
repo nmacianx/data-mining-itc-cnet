@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import datetime
 import os
+from database.mysql_connection import MySqlConnection
 from story import Story
 from author import Author
 from tag import Tag
@@ -331,6 +332,7 @@ class Scraper:
             f.write('Scraping session: {}\n'.format(
                 datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
             f.write('====================\n')
+            MySqlConnection.save_results(self.stories, self.mode)
             for story in self.stories:
                 f.writelines(story.get_full_info_lines())
             f.write('====================\n\n')

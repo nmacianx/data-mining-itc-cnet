@@ -41,6 +41,7 @@ CREATE TABLE `author`  (
   `location` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `occupation` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `member_since` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`id_author`) USING BTREE,
   UNIQUE INDEX `nick_name`(`nick_name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
@@ -52,6 +53,8 @@ DROP TABLE IF EXISTS `hashtag`;
 CREATE TABLE `hashtag`  (
   `id_hashtag` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `is_topic` bit(1) DEFAULT NULL,
   PRIMARY KEY (`id_hashtag`) USING BTREE,
   UNIQUE INDEX `name`(`name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;

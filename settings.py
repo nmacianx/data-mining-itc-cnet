@@ -123,3 +123,9 @@ STORY_TAG_SCRAPE_FIELDS = [
         'attr': 'href',
     },
 ]
+
+# Database Connection
+HOST = 'localhost'
+USER = 'root'
+PASSWORD = ''
+DATABASE = 'data_mining'
