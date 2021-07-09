@@ -8,11 +8,26 @@ class MySqlConnection:
 
     @staticmethod
     def save_results(data, mode):
+        """
+        Save the information in the database taking into account the scraping mode
+
+        Args:
+            data: scraping values to be save in the database
+            mode: mode in which the page was scraped
+        """
+
         if mode == MODE_TOP_STORIES:
             MySqlConnection._top_stories(data)
 
     @staticmethod
     def _top_stories(stories):
+        """
+        When the page was scraped in ULTRA mode this function is responsible for saving information in the database
+
+        Args:
+            stories: list that contains the items to be saved as well as the authors and tags of each
+        """
+
         with MySqlConnection.connection:
             with MySqlConnection.connection.cursor() as cursor:
                 for story in stories:
@@ -28,6 +43,17 @@ class MySqlConnection:
 
     @staticmethod
     def _merge_story(story, cursor):
+        """
+        Insert the story into the database or update the information of this if it already exists
+
+        Args:
+            story: story that is going to be saved in the database
+            cursor: object that contains information regarding the connection with the database
+
+        Returns:
+            row_id: row ID of the inserted/updated item
+        """
+
         sql_header = 'INSERT INTO article (title, date, url) '
         sql_values = f'VALUES ("{story.title}", "{story.date}", "{story.url}") '
         sql_duplicate = 'ON DUPLICATE KEY UPDATE date = "{}", url = "{}"'.format(story.date, story.url)
@@ -43,6 +69,17 @@ class MySqlConnection:
 
     @staticmethod
     def _merge_author(author, cursor):
+        """
+        Insert the author into the database or update the information of this if it already exists
+
+        Args:
+            author: author that is going to be saved in the database
+            cursor: object that contains information regarding the connection with the database
+
+        Returns:
+            row_id: row ID of the inserted/updated item
+        """
+
         sql_header = 'INSERT INTO author (nick_name, name, location, occupation, url, member_since) '
         sql_values = f'VALUES ("{author.username}", "{author.name}", "{author.location}", "{author.occupation}", ' \
                      f'"{author.website}", "{author.member_since}") '
@@ -61,6 +98,14 @@ class MySqlConnection:
 
     @staticmethod
     def _merge_stories_authors(values, cursor):
+        """
+        Insert the relationship, or update it, from an author with an story
+
+        Args:
+            values: contains the IDs of the different elements, author and story, which will be related
+            cursor: object that contains information regarding the connection with the database
+        """
+
         sql_header = 'INSERT INTO article_author (id_article, id_author) '
         sql_values = f'VALUES ({values[0]}, {values[1]}) '
         sql_duplicate = f'ON DUPLICATE KEY UPDATE id_article = {values[0]}, id_author = {values[1]}'
@@ -69,6 +114,17 @@ class MySqlConnection:
 
     @staticmethod
     def _merge_tag(tag, cursor):
+        """
+        Insert the tag into the database or update the information of this if it already exists
+
+        Args:
+            tag: tag that is going to be saved in the database
+            cursor: object that contains information regarding the connection with the database
+
+        Returns:
+            row_id: row ID of the inserted/updated item
+        """
+
         sql_header = 'INSERT INTO hashtag (name, url, is_topic) '
         sql_values = f'VALUES ("{tag.name}", "{tag.url}", {1 if tag.is_topic else 0}) '
         sql_duplicate = f'ON DUPLICATE KEY UPDATE url = "{tag.url}", is_topic = {1 if tag.is_topic else 0}'
@@ -84,6 +140,14 @@ class MySqlConnection:
 
     @staticmethod
     def _merge_stories_tags(values, cursor):
+        """
+        Insert the relationship, or update it, from an tag with an story
+
+        Args:
+            values: contains the IDs of the different elements, story and tag, which will be related
+            cursor: object that contains information regarding the connection with the database
+        """
+
         sql_header = 'INSERT INTO article_hashtag (id_article, id_hashtag) '
         sql_values = f'VALUES ({values[0]}, {values[1]}) '
         sql_duplicate = f'ON DUPLICATE KEY UPDATE id_article = {values[0]}, id_hashtag = {values[1]}'
