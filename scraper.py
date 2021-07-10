@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 import datetime
 import os
-from database import MySqlConnection as SqlConn
 from story import Story
 from author import Author
 from tag import Tag
@@ -326,6 +325,8 @@ class Scraper:
         """
         Function that saves the information scraped to the database.
         """
+        from database import MySqlConnection as SqlConn
+
         SqlConn.save_results(self.stories, self.mode)
 
         if self.logging:
