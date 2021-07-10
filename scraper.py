@@ -96,6 +96,8 @@ class Scraper:
             self.scrape_top_stories_page()
         elif self.mode == MODE_AUTHOR:
             self.scrape_stories_author()
+        else:
+            self.scrape_stories_tag()
 
         if self.logging:
             print('{} stories will be scraped'.format(len(self.urls)))
@@ -123,10 +125,24 @@ class Scraper:
 
         self.urls = self.urls[:self.number]
 
+    def scrape_stories_tag(self):
+        page = requests.get(TAG_URL + self.tag)
+        if page.status_code != SUCCESS_STATUS_CODE:
+            raise RuntimeError('Error! Tag {} was not found.'.format(self.tag))
+        soup = BeautifulSoup(page.content, 'html.parser')
+        tag_stories = soup.select(self.config.get_tag_urls_pattern())
+        if len(tag_stories) == 0:
+            raise RuntimeError('Error! No stories with the tag {} were found.'
+                               .format(self.tag))
+        urls = [a.get('href') for a in tag_stories]
+        urls = list(filter(lambda x: NEWS_URL_FILTER in x, urls))
+        self.urls += [DOMAIN_URL + u for u in urls]
+        self.urls = self.urls[:self.number]
+
     def scrape_stories_author(self):
         """
         Scrapes an Author profile using Selenium to get the URLs for the
-            articles and saves them to self.urls
+        articles and saves them to self.urls
         It checks for an unknown author and raises an exception in that case.
 
         """

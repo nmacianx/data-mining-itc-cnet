@@ -12,6 +12,7 @@ SCRAPE_MODE = [MODE_TOP_STORIES, MODE_TAG, MODE_AUTHOR]
 BASE_URL = "https://www.cnet.com/news/"
 BASE_AUTHOR_URL = "https://www.cnet.com/profiles/"
 DOMAIN_URL = "https://www.cnet.com"
+TAG_URL = 'https://www.cnet.com/tags/'
 DESTINATION_FILE_NAME = 'scraping.txt'
 MAX_URLS_DEFAULT = 15
 SUCCESS_STATUS_CODE = 200
@@ -28,6 +29,7 @@ CONFIG_MAIN_PATTERN = [
 ]
 
 CONFIG_AUTHOR_URLS = '.result-list > section.searchItem .itemDetails a[href]'
+CONFIG_TAG_URLS = 'section.listing > .asset > .assetBody > a'
 
 COMMON_PREFIX = '.content-header'
 CONFIG_TEMPLATE_COMMON = {

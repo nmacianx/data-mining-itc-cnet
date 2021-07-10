@@ -4,7 +4,8 @@ from scraper import Scraper
 from settings import CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES, SCRAPE_MODE, \
     FAIL_SILENTLY, DESTINATION_FILE_NAME, MODE_TAG, MODE_TOP_STORIES, \
     MODE_AUTHOR, CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE, \
-    CONFIG_STORIES_TAG_TOPIC_TEMPLATE, TESTING, CONFIG_AUTHOR_URLS
+    CONFIG_STORIES_TAG_TOPIC_TEMPLATE, TESTING, CONFIG_AUTHOR_URLS, \
+    CONFIG_TAG_URLS
 
 
 def main():
@@ -55,7 +56,7 @@ def main():
     config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
                            CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
                            CONFIG_STORIES_TAG_TOPIC_TEMPLATE,
-                           CONFIG_AUTHOR_URLS)
+                           CONFIG_AUTHOR_URLS, CONFIG_TAG_URLS)
     try:
         scraper = Scraper(config, logging=logging, should_save=should_save,
                           fail_silently=FAIL_SILENTLY,
@@ -84,7 +85,7 @@ def main_testing():
     config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
                            CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
                            CONFIG_STORIES_TAG_TOPIC_TEMPLATE,
-                           CONFIG_AUTHOR_URLS)
+                           CONFIG_AUTHOR_URLS, CONFIG_TAG_URLS)
     try:
         scraper = Scraper(config, False, file_name=DESTINATION_FILE_NAME)
         scraper.scrape()
