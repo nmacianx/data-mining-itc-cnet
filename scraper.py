@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import datetime
 import os
-from database.mysql_connection import MySqlConnection
+from database import MySqlConnection as SqlConn
 from story import Story
 from author import Author
 from tag import Tag
@@ -324,21 +324,12 @@ class Scraper:
 
     def save_results(self):
         """
-        Function that appends the information for the scraped stories appends it
-        to a text file in a nicely formatted way, including the current
-        datetime.
+        Function that saves the information scraped to the database.
         """
-        with open(self.file_path, 'a') as f:
-            f.write('Scraping session: {}\n'.format(
-                datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
-            f.write('====================\n')
-            MySqlConnection.save_results(self.stories, self.mode)
-            for story in self.stories:
-                f.writelines(story.get_full_info_lines())
-            f.write('====================\n\n')
+        SqlConn.save_results(self.stories, self.mode)
+
         if self.logging:
             print('Results were saved!')
-        #  TODO: Need to save data to the database, add Author data
 
     def print_results(self):
         """

@@ -14,6 +14,9 @@
  Date: 02/07/2021 16:21:11
 */
 
+CREATE DATABASE data_mining;
+USE data_mining;
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
