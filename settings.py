@@ -1,5 +1,5 @@
 # Scraper User Settings
-FAIL_SILENTLY = False
+FAIL_SILENTLY = True
 TESTING = False
 
 MODE_TOP_STORIES = 'top_stories'
@@ -13,6 +13,9 @@ BASE_URL = "https://www.cnet.com/news/"
 BASE_AUTHOR_URL = "https://www.cnet.com/profiles/"
 DOMAIN_URL = "https://www.cnet.com"
 DESTINATION_FILE_NAME = 'scraping.txt'
+MAX_URLS_DEFAULT = 15
+SUCCESS_STATUS_CODE = 200
+NEWS_URL_FILTER = '/news/'
 
 CONSOLE_WELCOME_MESSAGE = 'CNET News Web Scraper initialized'
 ERROR_FILE_PATH = "Error! Path to file_name doesn't exist."
@@ -23,6 +26,8 @@ CONFIG_MAIN_PATTERN = [
     CONFIG_PATTERN_COMMON,
     CONFIG_PATTERN_NUXT_JS
 ]
+
+CONFIG_AUTHOR_URLS = '.result-list > section.searchItem .itemDetails a[href]'
 
 COMMON_PREFIX = '.content-header'
 CONFIG_TEMPLATE_COMMON = {
@@ -64,6 +69,13 @@ STORY_SCRAPE_FIELDS = [
         'multiple': False,
     },
 ]
+
+# Selenium config for authors
+SELENIUM_DRIVER_PATH = './chromedriver/chromedriver'
+SELENIUM_TIMEOUT = 15
+SELENIUM_ARTICLES = '#user_tab > div.col-2 > div > section > ul > ' \
+                    'li:nth-child(2) > a'
+SELENIUM_CHECK_404 = '#profile-info > h1 > span:nth-child(1)'
 
 AUTHOR_PREFIX = '#profile-info'
 CONFIG_AUTHOR_TEMPLATE = {

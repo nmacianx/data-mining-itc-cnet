@@ -1,4 +1,11 @@
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, \
+    WebDriverException
+
 import requests
 import datetime
 import os
@@ -16,7 +23,8 @@ class Scraper:
 
     def __init__(self, config, logging=True, should_save=True,
                  mode=MODE_TOP_STORIES, fail_silently=False, file_name=None,
-                 file_full_path=False, author=None, tag=None, number=None):
+                 file_full_path=False, author=None, tag=None,
+                 number=None):
         """
         Constructor for the Scraper class
         Args:
@@ -47,7 +55,7 @@ class Scraper:
         self.tags = []
         self.author = author
         self.tag = tag
-        self.number = number
+        self.number = number if number is not None else MAX_URLS_DEFAULT
 
         if mode not in SCRAPE_MODE:
             raise ValueError('Scrape mode can only take one of the three '
@@ -84,7 +92,13 @@ class Scraper:
         Functions that runs the scraping process: gets the URLs for the top
         stories, scrapes them and saves the results.
         """
-        self.scrape_top_stories_page()
+        if self.mode == MODE_TOP_STORIES:
+            self.scrape_top_stories_page()
+        elif self.mode == MODE_AUTHOR:
+            self.scrape_stories_author()
+
+        if self.logging:
+            print('{} stories will be scraped'.format(len(self.urls)))
         self.scrape_stories()
         if self.should_save:
             self.save_results()
@@ -107,11 +121,46 @@ class Scraper:
                                    'news list failed.')
             self.urls += [DOMAIN_URL + a.get(pattern[1]) for a in top_stories]
 
-        if self.number is not None:
-            self.urls = self.urls[:self.number]
+        self.urls = self.urls[:self.number]
 
-        if self.logging:
-            print('{} stories will be scraped'.format(len(self.urls)))
+    def scrape_stories_author(self):
+        """
+        Scrapes an Author profile using Selenium to get the URLs for the
+            articles and saves them to self.urls
+        It checks for an unknown author and raises an exception in that case.
+
+        """
+        driver = webdriver.Chrome(executable_path=SELENIUM_DRIVER_PATH)
+        driver.get(BASE_AUTHOR_URL + self.author)
+
+        # handle 404 error
+        try:
+            driver.find_element_by_css_selector(SELENIUM_CHECK_404)
+        except NoSuchElementException:
+            raise RuntimeError("Error! Author {} wasn't found."
+                               .format(self.author))
+
+        driver.find_element_by_css_selector(SELENIUM_ARTICLES).click()
+        try:
+            WebDriverWait(driver, SELENIUM_TIMEOUT).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR,
+                                                "#ugc_content > .result-list"))
+            )
+        except WebDriverException:
+            driver.quit()
+            raise RuntimeError("Error! Couldn't fetch Author {} profile."
+                               .format(self.author))
+        try:
+            urls = driver.find_elements_by_css_selector(
+                self.config.get_author_urls_pattern())
+            urls = [u.get_attribute('href') for u in urls]
+            self.urls = list(filter(lambda x: NEWS_URL_FILTER in x, urls))
+            self.urls = self.urls[:self.number]
+        except WebDriverException:
+            driver.quit()
+            raise RuntimeError("Error! Couldn't fetch Author {} profile."
+                               .format(self.author))
+        driver.quit()
 
     def scrape_stories(self):
         """
@@ -182,7 +231,8 @@ class Scraper:
             soup,
             self.config.get_stories_tag_topic_template(),
             STORY_TAG_SCRAPE_FIELDS)
-        authors = [a.split('profiles/')[1][:-1] for a in s['authors']]
+        authors = ['+'.join(a.split('profiles/')[1][:-1].split())
+                   for a in s['authors']]
         authors_created = self._get_or_create_authors(authors)
 
         tags_parsed = []
@@ -250,6 +300,9 @@ class Scraper:
         """
         page = requests.get(BASE_AUTHOR_URL + username)
         soup = BeautifulSoup(page.content, 'html.parser')
+        if page.status_code != SUCCESS_STATUS_CODE:
+            raise RuntimeError("Warning! Author {} couldn't be scraped."
+                               .format(username))
         template = self.config.get_author_template()
         s = self._scrape_obj(soup, template, AUTHOR_SCRAPE_FIELDS)
         for field in AUTHOR_SCRAPE_FIELDS:
@@ -291,7 +344,12 @@ class Scraper:
             if found is not None:
                 result.append(found)
             else:
-                result.append(self._scrape_author(a))
+                try:
+                    result.append(self._scrape_author(a))
+                except RuntimeError as e:
+                    print(e)
+                except ValueError as e:
+                    print(e)
         return result
 
     def _get_or_create_tags(self, tags):
