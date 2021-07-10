@@ -1,19 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : Alex2
- Source Server Type    : MySQL
- Source Server Version : 50726
- Source Host           : localhost:3306
- Source Schema         : data_mining
-
- Target Server Type    : MySQL
- Target Server Version : 50726
- File Encoding         : 65001
-
- Date: 02/07/2021 16:21:11
-*/
-
 CREATE DATABASE data_mining;
 USE data_mining;
 
@@ -27,7 +11,7 @@ DROP TABLE IF EXISTS `article`;
 CREATE TABLE `article`  (
   `id_article` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
-  `date` datetime(0) NOT NULL,
+  `date` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`id_article`) USING BTREE,
   UNIQUE INDEX `title`(`title`, `date`) USING BTREE
