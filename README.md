@@ -50,9 +50,7 @@ In order to run the scraper, activate your virtual environment and run:
     - `-c --console`: print the results to the console instead of saving them.
     - `-v --verbose`: log status information to the console while running the 
       scraper.
-
-It will create a `scraping.txt` file with the scraped data and append data to 
-the file each time it's run.
+      
 
 ### Database design
 In order to save the scraped information as well as to give it a better sense, a database 
