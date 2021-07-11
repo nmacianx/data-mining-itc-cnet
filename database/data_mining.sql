@@ -29,7 +29,7 @@ CREATE TABLE `author`  (
   `location` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `occupation` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-  `member_since` date(0) DEFAULT NULL,
+  `member_since` date DEFAULT NULL,
   PRIMARY KEY (`id_author`) USING BTREE,
   UNIQUE INDEX `nick_name`(`nick_name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pymysql.cursors
-from settings import HOST, USER, PASSWORD, DATABASE, MODE_TOP_STORIES
+from settings import HOST, USER, PASSWORD, DATABASE
 
 
 class MySqlConnection:
