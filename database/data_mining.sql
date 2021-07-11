@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS data_mining;
 CREATE DATABASE data_mining;
 USE data_mining;
 
@@ -11,7 +12,7 @@ DROP TABLE IF EXISTS `article`;
 CREATE TABLE `article`  (
   `id_article` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
-  `date` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `date` datetime(0) NOT NULL,
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`id_article`) USING BTREE,
   UNIQUE INDEX `title`(`title`, `date`) USING BTREE
@@ -28,7 +29,7 @@ CREATE TABLE `author`  (
   `location` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `occupation` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-  `member_since` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `member_since` date(0) DEFAULT NULL,
   PRIMARY KEY (`id_author`) USING BTREE,
   UNIQUE INDEX `nick_name`(`nick_name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
