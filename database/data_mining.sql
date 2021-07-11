@@ -12,7 +12,7 @@ DROP TABLE IF EXISTS `article`;
 CREATE TABLE `article`  (
   `id_article` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
-  `date` datetime(0) NOT NULL,
+  `date` varchar(255) NOT NULL,
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`id_article`) USING BTREE,
   UNIQUE INDEX `title`(`title`, `date`) USING BTREE
