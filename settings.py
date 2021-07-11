@@ -1,6 +1,5 @@
 # Scraper User Settings
 FAIL_SILENTLY = True
-TESTING = True
 
 MODE_TOP_STORIES = 'top_stories'
 MODE_TAG = 'tag'
@@ -141,6 +140,6 @@ STORY_TAG_SCRAPE_FIELDS = [
 
 # Database Connection
 HOST = 'localhost'
+DATABASE = 'data_mining'
 USER = 'root'
 PASSWORD = ''
-DATABASE = 'data_mining'

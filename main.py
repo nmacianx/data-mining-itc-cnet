@@ -77,5 +77,34 @@ def main():
         exit(3)
 
 
+def main_testing():
+    """
+    Test the main method
+    """
+
+    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
+                           CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
+                           CONFIG_STORIES_TAG_TOPIC_TEMPLATE,
+                           CONFIG_AUTHOR_URLS, CONFIG_TAG_URLS)
+    try:
+        scraper = Scraper(config, False, file_name=DESTINATION_FILE_NAME)
+        scraper.scrape()
+    except ValueError as e:
+        print(e)
+        exit(1)
+    except RuntimeError as e:
+        print(e)
+        exit(2)
+    except AttributeError as e:
+        print(e)
+        exit(2)
+    except OSError as e:
+        print(e)
+        exit(3)
+
+
 if __name__ == '__main__':
-    main()
+    if True:
+        main_testing()
+    else:
+        main()

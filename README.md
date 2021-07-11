@@ -78,7 +78,7 @@ Below is a view of the structure of the tables that make up said database.
     </tr>
     <tr>
       <td>date</td>
-      <td>varchar(255)</td>
+      <td>datetime(0)</td>
     </tr>
     <tr>
       <td>url</td>
@@ -122,7 +122,7 @@ Save the information regarding the scraped stories
     </tr>
     <tr>
       <td>member_since</td>
-      <td>varchar(255)</td>
+      <td>date(0)</td>
     </tr>
 </table>
 
@@ -206,6 +206,10 @@ Save the relationship between a story and its authors
 </table>
 
 Save the relationship between a story and its tags
+
+In order to configure the connection with the database, 
+you must go to the `settings.py` file and configure 
+the `HOST`, `DATABASE`, `USER` and `PASSWORD`  of the database.
 
 ### Authors
 - [Nicolas Macian](https://github.com/nmacianx/)

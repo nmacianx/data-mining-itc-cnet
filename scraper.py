@@ -401,7 +401,7 @@ class Scraper:
         """
         from database import MySqlConnection as SqlConn
 
-        SqlConn.save_results(self.stories, self.mode)
+        SqlConn.save_results(self.stories)
 
         if self.logging:
             print('Results were saved!')
