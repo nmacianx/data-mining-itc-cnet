@@ -1,19 +1,4 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : Alex2
- Source Server Type    : MySQL
- Source Server Version : 50726
- Source Host           : localhost:3306
- Source Schema         : data_mining
-
- Target Server Type    : MySQL
- Target Server Version : 50726
- File Encoding         : 65001
-
- Date: 02/07/2021 16:21:11
-*/
-
+DROP DATABASE IF EXISTS data_mining;
 CREATE DATABASE data_mining;
 USE data_mining;
 
