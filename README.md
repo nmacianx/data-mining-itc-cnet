@@ -29,7 +29,8 @@ listed in the file `requirements.txt` by running:
 In order to run the scraper in `author` mode, Selenium is used to scrape the 
 URLs and it requires a ChromeDriver that can be downloaded from 
 [here](https://chromedriver.chromium.org/downloads). Note: the chrome driver
-version needs to match your local chrome version.
+version needs to match your local Chrome version (Google Chrome is a 
+requirement).
 
 Save the `chromedriver` executable inside the folder `/chromedriver/` in this
 project.
