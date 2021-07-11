@@ -1,6 +1,6 @@
 # Scraper User Settings
 FAIL_SILENTLY = True
-TESTING = False
+TESTING = True
 
 MODE_TOP_STORIES = 'top_stories'
 MODE_TAG = 'tag'
