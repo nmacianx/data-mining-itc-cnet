@@ -140,6 +140,6 @@ STORY_TAG_SCRAPE_FIELDS = [
 
 # Database Connection
 HOST = 'localhost'
+DATABASE = 'data_mining'
 USER = 'root'
 PASSWORD = ''
-DATABASE = 'data_mining'
