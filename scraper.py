@@ -126,6 +126,10 @@ class Scraper:
         self.urls = self.urls[:self.number]
 
     def scrape_stories_tag(self):
+        """
+        Scrapes the tag website to get a list of stories and saves them in a
+        class attribute so they can be scraped later.
+        """
         page = requests.get(TAG_URL + self.tag)
         if page.status_code != SUCCESS_STATUS_CODE:
             raise RuntimeError('Error! Tag {} was not found.'.format(self.tag))
