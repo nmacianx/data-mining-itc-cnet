@@ -143,24 +143,27 @@ class Scraper:
         self.urls += [DOMAIN_URL + u for u in urls]
         self.urls = self.urls[:self.number]
 
-    def scrape_stories_author(self):
+    def _check_selenium_404(self, driver):
         """
-        Scrapes an Author profile using Selenium to get the URLs for the
-        articles and saves them to self.urls
-        It checks for an unknown author and raises an exception in that case.
-
+        Checks if the desired page to scrape returned a 404 error by checking
+        the pattern for a 404 error page. If a 404 error was encountered, it
+        raises an error.
+        Args:
+            driver: Chrome webdriver instance used by Selenium
         """
-        driver = webdriver.Chrome(executable_path=SELENIUM_DRIVER_PATH)
-        driver.get(BASE_AUTHOR_URL + self.author)
-
-        # handle 404 error
         try:
             driver.find_element_by_css_selector(SELENIUM_CHECK_404)
         except NoSuchElementException:
             raise RuntimeError("Error! Author {} wasn't found."
                                .format(self.author))
 
-        driver.find_element_by_css_selector(SELENIUM_ARTICLES).click()
+    def _await_author_profile_load(self, driver):
+        """
+        Makes Selenium webdriver instance wait for the dynamic results of the
+        articles written by an author to be loaded.
+        Args:
+            driver: Chrome webdriver instance used by Selenium
+        """
         try:
             WebDriverWait(driver, SELENIUM_TIMEOUT).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR,
@@ -170,6 +173,20 @@ class Scraper:
             driver.quit()
             raise RuntimeError("Error! Couldn't fetch Author {} profile."
                                .format(self.author))
+
+    def scrape_stories_author(self):
+        """
+        Scrapes an Author profile using Selenium to get the URLs for the
+        articles and saves them to self.urls
+        It checks for an unknown author and raises an exception in that case.
+
+        """
+        driver = webdriver.Chrome(executable_path=SELENIUM_DRIVER_PATH)
+        driver.get(BASE_AUTHOR_URL + self.author)
+        self._check_selenium_404(driver)
+        driver.find_element_by_css_selector(SELENIUM_ARTICLES).click()
+        self._await_author_profile_load(driver)
+
         try:
             urls = driver.find_elements_by_css_selector(
                 self.config.get_author_urls_pattern())

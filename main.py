@@ -8,9 +8,11 @@ from settings import CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES, SCRAPE_MODE, \
     CONFIG_TAG_URLS
 
 
-def main():
+def init_parser():
     """
-    Configures the Scraper, instantiates it and runs it
+    Initializes the ArgumentParser with the right arguments for the scraper
+    Returns:
+        parser: ArgumentParser instance
     """
     parser = argparse.ArgumentParser(description='CNET News Scraper')
     parser.add_argument('mode', choices=SCRAPE_MODE,
@@ -26,15 +28,20 @@ def main():
                         help='Print results in stdout instead of saving them.')
     parser.add_argument('-v', "--verbose", action='store_true',
                         help='Log extra information to the stdout.')
+    return parser
 
-    args = parser.parse_args()
-    should_save = True
-    logging = False
-    if args.console:
-        should_save = False
-    if args.verbose:
-        logging = True
 
+def validate_parser(parser, args):
+    """
+    Checks some conditions in the arguments of the scraper and it raises an
+    error if an invalid combination of the arguments was provided.
+    Args:
+        parser: ArgumentParser instance for the scraper
+        args: parsed arguments from the parser
+
+    Returns:
+
+    """
     if args.mode == MODE_TOP_STORIES:
         if args.author:
             parser.error('Top stories mode should not be passed an author '
@@ -52,6 +59,21 @@ def main():
                          '(-t / --tag).')
     if args.tag and args.author:
         parser.error("Incorrect arguments. Can't set tag and author together.")
+
+
+def main():
+    """
+    Configures the Scraper, instantiates it and runs it
+    """
+    parser = init_parser()
+    args = parser.parse_args()
+    should_save = True
+    logging = False
+    if args.console:
+        should_save = False
+    if args.verbose:
+        logging = True
+    validate_parser(parser, args)
 
     config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
                            CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
