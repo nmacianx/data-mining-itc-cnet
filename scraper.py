@@ -5,7 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, \
     WebDriverException
-
+from database import MySqlConnection as SqlConn
 import requests
 import datetime
 import os
@@ -420,10 +420,7 @@ class Scraper:
         """
         Function that saves the information scraped to the database.
         """
-        from database import MySqlConnection as SqlConn
-
         SqlConn.save_results(self.stories)
-
         if self.logging:
             print('Results were saved!')
 
