@@ -51,9 +51,8 @@ class MySqlConnection:
         Returns:
             row_id: row ID of the inserted/updated item
         """
-        fixed_date = story.date.replace('a.m.', 'AM').replace('p.m.', 'PM')[:-3]
-        date_time_obj = datetime.strptime(fixed_date,
-                                          '%B %d, %Y %I:%M %p')
+
+        date_time_obj = MySqlConnection._fix_date(story.date)
         formatted_date = ' '.join([str(date_time_obj.date()),
                                    str(date_time_obj.time())])
         sql_header = 'INSERT INTO article (title, date, url, description) '
@@ -88,8 +87,8 @@ class MySqlConnection:
             row_id: row ID of the inserted/updated item
         """
 
-        formatted_member_since = datetime.strptime(author.member_since,
-                                                   '%B %d, %Y').date()
+        formatted_member_since = MySqlConnection._fix_date(author.member_since,
+                                                           'author')
         sql_header = 'INSERT INTO author (nick_name, name, location, ' \
                      'occupation, url, member_since) '
         sql_values = f'VALUES ("{author.username}", "{author.name}", ' \
@@ -179,3 +178,43 @@ class MySqlConnection:
                         f'id_hashtag = {values[1]}'
         cursor.execute(sql_header + sql_values + sql_duplicate)
         MySqlConnection.connection.commit()
+
+    @staticmethod
+    def _fix_date(date_to_fix, date_type='story'):
+        """
+        Fix the date to match the desired format
+
+        Args:
+            date_type: specify if it is an author or story date
+            date_to_fix: date to fix format
+
+        Returns:
+            fixed_date: returns the date with the desired format to save it in
+            the database
+        """
+
+        if date_type == 'story':
+            try:
+                if 'a.m.' in date_to_fix or 'p.m.' in date_to_fix:
+                    fixed_date = date_to_fix.replace('a.m.', 'AM')\
+                                     .replace('p.m.', 'PM')[:-3]
+                    date_time_obj = datetime.strptime(fixed_date,
+                                                      '%B %d, %Y %I:%M %p')
+                else:
+                    date_time_obj = datetime.strptime(date_to_fix, '%B %d, %Y')
+            except Exception:
+                print('No matching date format found for story,'
+                      ' set current date')
+                date_time_obj = datetime.today()
+
+            return date_time_obj
+        else:
+            try:
+                date_time_obj = datetime.strptime(date_to_fix, '%B %d, %Y')\
+                    .date()
+            except Exception:
+                print('No matching date format found for author,'
+                      ' set current date')
+                date_time_obj = datetime.today()
+
+            return date_time_obj
