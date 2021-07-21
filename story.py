@@ -23,9 +23,6 @@ class Story:
             raise ValueError('A description needs to be provided to a Story.')
         if date is None:
             raise ValueError('A date needs to be provided to a Story.')
-        if authors is None or (isinstance(authors, list) and len(authors) == 0):
-            raise ValueError('At least one author needs to be provided to a '
-                             'Story.')
 
         self.index = index
         self.title = title.strip()
@@ -58,11 +55,14 @@ class Story:
         """
         lines = ['\n\nStory {}:\n'.format(self.index),
                  'Title: {}\n'.format(self.title),
-                 'Description: {}\n'.format(self.description),
-                 'Author/s: {}\n'.format(', '.join(
-                     map(lambda a: a.get_username(), self.authors))),
-                 'Date: {}\n'.format(self.date),
-                 'URL: {}\n'.format(self.url)]
+                 'Description: {}\n'.format(self.description)]
+        if self.authors is not None and len(self.authors) > 0:
+            line_author = 'Author/s: {}\n'.format(', '.join(
+                         map(lambda a: a.get_username(), self.authors)))
+            lines.append(line_author)
+        lines_2 = ['Date: {}\n'.format(self.date),
+                   'URL: {}\n'.format(self.url)]
+        lines += lines_2
         if self.tags is not None and len(self.tags) > 0:
             tags_lines = ['Tags: \n']
             for t in self.tags:

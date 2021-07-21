@@ -17,6 +17,8 @@ of these two patterns are
 [this one](https://www.cnet.com/news/windows-11-everything-we-want-to-see-in-the-new-microsoft-os/)
 and [this one](https://www.cnet.com/features/gps-rules-everything-a-satellite-launch-this-week-keeps-its-upgrade-rolling/).
 
+Also, the scraper can also integrate data for articles coming from The New York
+Times (TNYT) given the correct parameters.
 
 ### Requirements
 This project was built using **Python 3.8.2**, so make sure you're running that 
@@ -35,16 +37,25 @@ requirement).
 Save the `chromedriver` executable inside the folder `/chromedriver/` in this
 project.
 
+In order to be able to query TNYT's API, you need to register [here](https://developer.nytimes.com/)
+and get an API key for the Top Stories API. In order to do it, navigate to the
+site and log in to your account. Click on your email in the top right > Apps. 
+Create a new app and enable the Top Stories API. Copy the API Key to the 
+`settings.py` variable `API_KEY`.
+
 ### Running the scraper
 In order to run the scraper, activate your virtual environment and run:
 
-`python main.py [-h] [-a AUTHOR] [-t TAG] [-c] [-v] {top_stories,tag,author}`
+`python main.py [-h] [-a AUTHOR] [-t TAG] [-c] [-v] {top_stories,tag,author} 
+--api science`
 
 * Mandatory arguments:
     - mode: can be `top_stories`, `tag` or `author`.
     - `-a --author`: author to scrape if mode = `author`.
     - `-t --tag`: tag to scrape if mode = `tag`.
 * Optional arguments:
+    - `--api {science, technology}`: query TNYT's API for science or technology 
+      articles.
     - `-n --number`: limit the number of stories to scrape.
     - `-h --help`: get help for running the scraper.
     - `-c --console`: print the results to the console instead of saving them.

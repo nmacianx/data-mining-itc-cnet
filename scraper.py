@@ -9,6 +9,7 @@ from database import MySqlConnection as SqlConn
 import requests
 import datetime
 import os
+import json
 from story import Story
 from author import Author
 from tag import Tag
@@ -24,7 +25,7 @@ class Scraper:
     def __init__(self, config, logging=True, should_save=True,
                  mode=MODE_TOP_STORIES, fail_silently=False, file_name=None,
                  file_full_path=False, author=None, tag=None,
-                 number=None):
+                 number=None, api=None):
         """
         Constructor for the Scraper class
         Args:
@@ -71,6 +72,12 @@ class Scraper:
         if self.should_save and file_name is None:
             raise ValueError('File name needs to be provided '
                              'if should_save=True')
+
+        if api is not None and api not in API_TOPICS:
+            raise ValueError('Invalid value "{}" for api parameter of '
+                             'the scraper.'.format(api))
+        self.api = api
+
         if file_full_path:
             file_dir = os.path.dirname(file_name)
             if file_dir:
@@ -102,10 +109,58 @@ class Scraper:
         if self.logging:
             print('{} stories will be scraped'.format(len(self.urls)))
         self.scrape_stories()
+
+        if self.api is not None:
+            self.query_api()
+
         if self.should_save:
             self.save_results()
         else:
             self.print_results()
+
+    def query_api(self):
+        """
+        Makes the query to the New York Times API and creates Story objects
+        """
+        if self.logging:
+            print('Querying the New York Times API...')
+        response = requests.get(API_URL.format(self.api, API_KEY))
+        if response.status_code != SUCCESS_STATUS_CODE:
+            if response.status_code == UNAUTHORIZED_STATUS_CODE:
+                raise ValueError("Error! There's an error related to "
+                                 "the API key.")
+            else:
+                raise RuntimeError(
+                    'Error! Something went wrong when querying the NYT API')
+        response = json.loads(response.text)
+        results = response['results']
+        for result in results[:self.number]:
+            self.stories.append(self.parse_api_story(result))
+
+    def parse_api_story(self, story):
+        """
+        Parses a story received from the API, converts the date and creates a
+        Story object.
+        Args:
+            story: unparsed content of a story, coming from the API.
+
+        Returns:
+            story: Story object
+
+        """
+        # Convert the date from ET to PT
+        date = datetime.datetime.fromisoformat(story['published_date']) - \
+               datetime.timedelta(hours=3)
+        date = date.strftime('%B %d, %Y %I:%M %p') + ' PT'
+        try:
+            story = Story(len(self.stories) + 1, story['title'],
+                          story['abstract'], date,
+                          url=story['url'])
+        except ValueError as e:
+            print('Error! Something unexpected happened when scraping a story:')
+            raise ValueError(e)
+
+        return story
 
     def scrape_top_stories_page(self):
         """

@@ -15,6 +15,7 @@ TAG_URL = 'https://www.cnet.com/tags/'
 DESTINATION_FILE_NAME = 'scraping.txt'
 MAX_URLS_DEFAULT = 15
 SUCCESS_STATUS_CODE = 200
+UNAUTHORIZED_STATUS_CODE = 401
 NEWS_URL_FILTER = '/news/'
 
 CONSOLE_WELCOME_MESSAGE = 'CNET News Web Scraper initialized'
@@ -137,6 +138,13 @@ STORY_TAG_SCRAPE_FIELDS = [
         'attr': 'href',
     },
 ]
+
+# API Settings
+API_URL = 'http://api.nytimes.com/svc/topstories/v2/{}.json?api-key={}'
+API_KEY = ''
+API_SCIENCE = 'science'
+API_TECHNOLOGY = 'technology'
+API_TOPICS = [API_SCIENCE, API_TECHNOLOGY]
 
 # Database Connection
 HOST = 'localhost'
