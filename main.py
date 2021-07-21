@@ -5,7 +5,7 @@ from settings import CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES, SCRAPE_MODE, \
     FAIL_SILENTLY, DESTINATION_FILE_NAME, MODE_TAG, MODE_TOP_STORIES, \
     MODE_AUTHOR, CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE, \
     CONFIG_STORIES_TAG_TOPIC_TEMPLATE, CONFIG_AUTHOR_URLS, \
-    CONFIG_TAG_URLS
+    CONFIG_TAG_URLS, API_TOPICS
 
 
 def init_parser():
@@ -17,7 +17,7 @@ def init_parser():
     parser = argparse.ArgumentParser(description='CNET News Scraper')
     parser.add_argument('mode', choices=SCRAPE_MODE,
                         help="The scraping can start with the top stories, "
-                             "an author or a tag.")
+                             "an author, a tag or the API.")
     parser.add_argument('-a', '--author',
                         help="The author to scrape if mode is author.")
     parser.add_argument('-n', '--number', type=int,
@@ -28,6 +28,8 @@ def init_parser():
                         help='Print results in stdout instead of saving them.')
     parser.add_argument('-v', "--verbose", action='store_true',
                         help='Log extra information to the stdout.')
+    parser.add_argument('--api',
+                        help='Topic to query the New York Times API on.')
     return parser
 
 
@@ -38,9 +40,6 @@ def validate_parser(parser, args):
     Args:
         parser: ArgumentParser instance for the scraper
         args: parsed arguments from the parser
-
-    Returns:
-
     """
     if args.mode == MODE_TOP_STORIES:
         if args.author:
@@ -59,6 +58,44 @@ def validate_parser(parser, args):
                          '(-t / --tag).')
     if args.tag and args.author:
         parser.error("Incorrect arguments. Can't set tag and author together.")
+    if args.api is not None and args.api not in API_TOPICS:
+        parser.error("Incorrect arguments. API can only be set to science "
+                     "or technology.")
+
+
+def main_scraper(logging, should_save, args):
+    """
+    Creates the configuration and instantiates a scraper. Then it makes it
+    scrape and tries to catch exceptions.
+    Args:
+        logging: config value for the scraper to enable console logging
+        should_save: config value to make sure the data scraped is saved to the
+            db.
+        args: config values coming from the CLI required to create the Scraper.
+    """
+    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
+                           CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
+                           CONFIG_STORIES_TAG_TOPIC_TEMPLATE,
+                           CONFIG_AUTHOR_URLS, CONFIG_TAG_URLS)
+    try:
+        scraper = Scraper(config, logging=logging, should_save=should_save,
+                          fail_silently=FAIL_SILENTLY,
+                          file_name=DESTINATION_FILE_NAME, mode=args.mode,
+                          author=args.author, tag=args.tag, number=args.number,
+                          api=args.api)
+        scraper.scrape()
+    except ValueError as e:
+        print(e)
+        exit(1)
+    except RuntimeError as e:
+        print(e)
+        exit(2)
+    except AttributeError as e:
+        print(e)
+        exit(2)
+    except OSError as e:
+        print(e)
+        exit(3)
 
 
 def main():
@@ -73,30 +110,9 @@ def main():
         should_save = False
     if args.verbose:
         logging = True
-    validate_parser(parser, args)
 
-    config = Configuration(CONFIG_MAIN_PATTERN, CONFIG_TEMPLATES,
-                           CONFIG_AUTHOR_TEMPLATE, CONFIG_STORIES_TAG_TEMPLATE,
-                           CONFIG_STORIES_TAG_TOPIC_TEMPLATE,
-                           CONFIG_AUTHOR_URLS, CONFIG_TAG_URLS)
-    try:
-        scraper = Scraper(config, logging=logging, should_save=should_save,
-                          fail_silently=FAIL_SILENTLY,
-                          file_name=DESTINATION_FILE_NAME, mode=args.mode,
-                          author=args.author, tag=args.tag, number=args.number)
-        scraper.scrape()
-    except ValueError as e:
-        print(e)
-        exit(1)
-    except RuntimeError as e:
-        print(e)
-        exit(2)
-    except AttributeError as e:
-        print(e)
-        exit(2)
-    except OSError as e:
-        print(e)
-        exit(3)
+    validate_parser(parser, args)
+    main_scraper(logging, should_save, args)
 
 
 if __name__ == '__main__':
