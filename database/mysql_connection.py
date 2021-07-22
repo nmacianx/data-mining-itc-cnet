@@ -25,17 +25,19 @@ class MySqlConnection:
                     id_merged_story = MySqlConnection._merge_story(element,
                                                                    cursor)
 
-                    for author in element.authors:
-                        id_merged_author = MySqlConnection._merge_author(author,
-                                                                         cursor)
-                        MySqlConnection._merge_stories_authors(
-                            [id_merged_story, id_merged_author], cursor)
+                    if element.authors is not None:
+                        for author in element.authors:
+                            id_merged_author = MySqlConnection._merge_author(author,
+                                                                             cursor)
+                            MySqlConnection._merge_stories_authors(
+                                [id_merged_story, id_merged_author], cursor)
 
-                    for tag in element.tags:
-                        id_merged_tag = MySqlConnection._merge_tag(tag, cursor)
-                        MySqlConnection._merge_stories_tags([id_merged_story,
-                                                             id_merged_tag],
-                                                            cursor)
+                    if element.tags is not None:
+                        for tag in element.tags:
+                            id_merged_tag = MySqlConnection._merge_tag(tag, cursor)
+                            MySqlConnection._merge_stories_tags([id_merged_story,
+                                                                 id_merged_tag],
+                                                                cursor)
 
     @staticmethod
     def _merge_story(story, cursor):
