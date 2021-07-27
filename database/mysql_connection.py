@@ -57,12 +57,15 @@ class MySqlConnection:
         date_time_obj = MySqlConnection._fix_date(story.date)
         formatted_date = ' '.join([str(date_time_obj.date()),
                                    str(date_time_obj.time())])
+        description = MySqlConnection.clean_text(story.description)
+
         sql_header = 'INSERT INTO article (title, date, url, description) '
         sql_values = f'VALUES ("{story.title}", "{formatted_date}", ' \
-                     f'"{story.url}", "{story.description}") '
+                     f'"{story.url}", "{description}") '
         sql_duplicate = 'ON DUPLICATE KEY UPDATE date = "{}", url = "{}", ' \
                         'description = "{}"' \
-            .format(formatted_date, story.url, story.description)
+            .format(formatted_date, story.url, description)
+        print(sql_header + sql_values + sql_duplicate)
         cursor.execute(sql_header + sql_values + sql_duplicate)
         MySqlConnection.connection.commit()
         row_id = cursor.lastrowid
@@ -220,3 +223,21 @@ class MySqlConnection:
                 date_time_obj = datetime.today()
 
             return date_time_obj
+
+    @staticmethod
+    def clean_text(text_to_clean):
+        """
+        Fix the quotes and double quotes so that they can be used within a text
+        without problems
+
+        Args:
+            text_to_clean: text to which the transformation will be carried out
+
+        Returns:
+            text ready to be saved in the database
+        """
+
+        text_to_clean = text_to_clean.replace('\'', '\\\'')
+        text_to_clean = text_to_clean.replace('\"', '\\\"')
+
+        return text_to_clean
