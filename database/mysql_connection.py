@@ -1,5 +1,4 @@
 from datetime import datetime
-
 import pymysql.cursors
 from settings import HOST, USER, PASSWORD, DATABASE
 
