@@ -64,7 +64,6 @@ class MySqlConnection:
         sql_duplicate = 'ON DUPLICATE KEY UPDATE date = "{}", url = "{}", ' \
                         'description = "{}"' \
             .format(formatted_date, story.url, description)
-        print(sql_header + sql_values + sql_duplicate)
         cursor.execute(sql_header + sql_values + sql_duplicate)
         MySqlConnection.connection.commit()
         row_id = cursor.lastrowid
