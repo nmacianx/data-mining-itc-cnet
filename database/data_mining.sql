@@ -16,7 +16,7 @@ CREATE TABLE `article`  (
   `url` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `description` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`id_article`) USING BTREE,
-  UNIQUE INDEX `title`(`title`, `date`) USING BTREE
+  UNIQUE INDEX `url`(`url`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------

@@ -57,13 +57,14 @@ class MySqlConnection:
         formatted_date = ' '.join([str(date_time_obj.date()),
                                    str(date_time_obj.time())])
         description = MySqlConnection.clean_text(story.description)
+        title = story.title
 
         sql_header = 'INSERT INTO article (title, date, url, description) '
-        sql_values = f'VALUES ("{story.title}", "{formatted_date}", ' \
+        sql_values = f'VALUES ("{title}", "{formatted_date}", ' \
                      f'"{story.url}", "{description}") '
-        sql_duplicate = 'ON DUPLICATE KEY UPDATE date = "{}", url = "{}", ' \
+        sql_duplicate = 'ON DUPLICATE KEY UPDATE date = "{}", title = "{}", ' \
                         'description = "{}"' \
-            .format(formatted_date, story.url, description)
+            .format(formatted_date, title, description)
         cursor.execute(sql_header + sql_values + sql_duplicate)
         MySqlConnection.connection.commit()
         row_id = cursor.lastrowid
