@@ -236,7 +236,10 @@ class Scraper:
         It checks for an unknown author and raises an exception in that case.
 
         """
-        driver = webdriver.Chrome(executable_path=SELENIUM_DRIVER_PATH)
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.headless = True
+        driver = webdriver.Chrome(executable_path=SELENIUM_DRIVER_PATH,
+                                  options=chrome_options)
         driver.get(BASE_AUTHOR_URL + self.author)
         self._check_selenium_404(driver)
         driver.find_element_by_css_selector(SELENIUM_ARTICLES).click()
